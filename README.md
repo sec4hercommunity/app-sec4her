@@ -9,8 +9,9 @@
 **Sec4Her** è una community sulla **cybersecurity fatta da donne, per donne**: uno spazio dove imparare l'hacking
 partendo da zero, con una guida, un percorso e senza mai sentirsi sole.
 
-Questo repository contiene la **web app** di Sec4Her. Per ora l'app ha due pagine: **Accedi** e **Registrati**,
-con controlli sui campi. Il collegamento a un database per salvare davvero gli account verrà fatto più avanti.
+Questo repository contiene la **web app** di Sec4Her. Per ora l'app ha le pagine **Accedi** e **Registrati**
+(con controlli sui campi), una **Home** riservata con menu, e alcune pagine segnaposto. Il login funziona solo con
+delle **credenziali di test**: il collegamento a un database per gestire davvero gli account verrà fatto più avanti.
 
 > ℹ️ Il file `public/logo.png` non è ancora presente nel repository: finché non viene aggiunto, l'immagine qui
 > sopra non si vede e nell'app compare al suo posto la scritta **sec4her**.
@@ -121,11 +122,24 @@ app-sec4her/
 │   ├── index.css               Importa Tailwind e definisce colori e font del brand
 │   ├── pages/                  Le pagine complete
 │   │   ├── Accedi.jsx          Pagina di accesso (/accedi)
-│   │   └── Registrati.jsx      Pagina di registrazione (/registrati)
+│   │   ├── Registrati.jsx      Pagina di registrazione (/registrati)
+│   │   ├── Home.jsx            Home riservata (/home): titolo, descrizione e card delle attività
+│   │   └── Segnaposto.jsx      Pagina provvisoria usata per tutte le voci del menu
 │   ├── components/             Pezzi riutilizzati dalle pagine
-│   │   ├── AuthLayout.jsx      Cornice comune: logo, slogan, card centrata con il titolo
+│   │   ├── AuthLayout.jsx      Cornice di Accedi/Registrati: logo, slogan, card centrata
 │   │   ├── Campo.jsx           Campo di testo con etichetta e messaggio di errore
-│   │   └── Pulsante.jsx        Pulsante viola principale
+│   │   ├── Pulsante.jsx        Pulsante viola principale
+│   │   ├── Logo.jsx            Logo (public/logo.png) con scritta "sec4her" se l'immagine manca
+│   │   ├── LayoutSito.jsx      Struttura delle pagine riservate: header + contenuto bianco + footer
+│   │   ├── Header.jsx          Barra in alto: logo e menu ☰ con il pulsante "Esci"
+│   │   ├── Footer.jsx          Barra in basso: contatti e copyright
+│   │   └── RottaProtetta.jsx   Blocca le pagine riservate a chi non ha fatto il login
+│   ├── auth/
+│   │   ├── AuthProvider.jsx    Stato del login: accedi, esci, utente collegata
+│   │   └── contesto.js         Hook useAuth() per leggere lo stato del login da qualsiasi pagina
+│   ├── config/
+│   │   ├── credenzialiTest.js  ⚠️ Email e password di TEST (solo sviluppo)
+│   │   └── sito.js             Voci del menu e contatti del footer (facili da modificare)
 │   └── lib/
 │       └── validazione.js      Regole di controllo dei campi e testi degli errori
 ├── index.html                  Pagina HTML di base (lingua, titolo, favicon)
@@ -212,11 +226,16 @@ Come funziona per chi usa la pagina:
 
 ### Cosa succede quando si clicca il pulsante
 
-**"Accedi"** (`Accedi.jsx`): se email e password sono corrette, sopra il form compare un riquadro verde:
+**"Accedi"** (`Accedi.jsx`): prima vengono fatti i controlli sui campi. Se sono superati, email e password
+vengono confrontate con le **credenziali di test** (vedi sezione 6):
 
-> **[ok]** Dati validi. L'accesso sarà attivo appena collegheremo il database.
+- se coincidono → si entra e si arriva alla pagina **`/home`**;
+- se non coincidono → sopra il form compare il riquadro cremisi **"[errore] Email o password non corretti"**.
 
-Non viene fatto nessun accesso vero: non esiste ancora un elenco di utenti con cui confrontare i dati.
+```jsx
+if (accedi(valori.email, valori.password)) navigate(destinazione, { replace: true })
+else setErroreLogin('Email o password non corretti')
+```
 
 **"Crea account"** (`Registrati.jsx`): se tutti i campi sono corretti, il form viene sostituito da una schermata
 di conferma con il nome inserito e un pulsante **"Vai ad Accedi"**:
@@ -233,11 +252,106 @@ setValori(VUOTO)
 ### ⚠️ Per ora i dati NON vengono salvati
 
 Non c'è **nessun database collegato**. I dati inseriti restano solo nella pagina e si perdono
-ricaricandola: dopo esserti "registrata" non puoi davvero accedere con quell'account.
+ricaricandola: dopo esserti "registrata" non puoi accedere con quell'account. Per entrare usa le
+credenziali di test.
 
 ---
 
-## 6. Stile e colori del brand
+## 6. Home, menu e credenziali di test
+
+### Credenziali di test (solo per sviluppo)
+
+| Campo | Valore |
+| --- | --- |
+| Email | `test@sec4her.com` |
+| Password | `Test1234!` |
+
+Si trovano in **`src/config/credenzialiTest.js`**, un file separato con un avviso ben visibile:
+
+```js
+// ⚠️  CREDENZIALI SOLO DI TEST — USARE ESCLUSIVAMENTE IN SVILUPPO  ⚠️
+// ...
+// Da sostituire con un vero sistema di autenticazione (es. Supabase Auth), che controlla
+// email e password sul server. Quando succederà, questo file andrà eliminato.
+export const CREDENZIALI_TEST = {
+  email: 'test@sec4her.com',
+  password: 'Test1234!',
+}
+```
+
+> ⚠️ Il confronto avviene **nel browser**: chiunque apra il sito può leggere questi valori. Vanno bene solo per
+> provare l'app in locale, **mai in produzione**.
+
+Come funziona il login di test (`src/auth/AuthProvider.jsx`):
+
+- L'email viene confrontata senza badare a maiuscole/minuscole e spazi; la password deve essere **identica**.
+- Il login viene ricordato nella `sessionStorage` del browser: se ricarichi la pagina resti dentro, se chiudi la
+  scheda dovrai rifare l'accesso.
+- Se sei già dentro e apri `/accedi`, vieni riportata direttamente alla home.
+
+### Pagine protette
+
+Tutte le pagine dopo il login (`/home` e le pagine del menu) sono dentro `RottaProtetta` in `src/App.jsx`:
+
+```jsx
+<Route element={<RottaProtetta />}>
+  <Route element={<LayoutSito />}>
+    <Route path="/home" element={<Home />} />
+    {/* ...una pagina segnaposto per ogni voce del menu */}
+  </Route>
+</Route>
+```
+
+Se provi ad aprire una di queste pagine **senza aver fatto il login**, vieni mandata su **Accedi**. Dopo il login
+torni automaticamente alla pagina che avevi chiesto.
+
+### La pagina Home (`/home`)
+
+Ogni pagina riservata ha tre parti (`src/components/LayoutSito.jsx`):
+
+1. **Header** scuro (`Header.jsx`) con una linea cremisi sotto:
+   - a sinistra il **logo**, cliccabile, che riporta a `/home`;
+   - a destra l'icona **☰** che apre il menu.
+2. **Parte centrale bianca** (`Home.jsx`):
+   - titolo **"Benvenuta in Sec4Her Academy"** in viola, monospace grassetto;
+   - sottotitolo **HACK THE FUTURE** con una linea cremisi sotto;
+   - un paragrafo di descrizione dell'Academy;
+   - 4 card con bordo viola: **Lezioni, Eventi, CTF, Bug Bounty**, ognuna cliccabile verso la sua pagina.
+3. **Footer** scuro (`Footer.jsx`): logo, slogan, sezione **Contatti** (email, Instagram, LinkedIn, GitHub) e
+   **"© 2026 Sec4Her – Hack the Future"**.
+
+I testi della home (descrizione e card) sono in cima a `src/pages/Home.jsx`, nelle costanti `DESCRIZIONE` e
+`ATTIVITA`: sono **testi segnaposto**, da modificare liberamente.
+
+### Il menu ☰
+
+Le voci sono definite in **`src/config/sito.js`** (per aggiungerne una basta aggiungere una riga):
+
+| Voce | Indirizzo |
+| --- | --- |
+| About us | `/about` |
+| Lezioni | `/lezioni` |
+| Eventi | `/eventi` |
+| Meeting | `/meeting` |
+| CTF Groups | `/ctf` |
+| Bug Bounty Group | `/bug-bounty` |
+| Contact us | `/contatti` |
+| **Esci** | fa il logout e torna su `/accedi` |
+
+Il menu si chiude: cliccando una voce, cliccando fuori dal menu, premendo di nuovo l'icona (che quando il menu è
+aperto diventa **✕**) oppure premendo **Esc**.
+
+Per ora ogni voce porta a una **pagina segnaposto** (`Segnaposto.jsx`) con lo stesso header e footer, il titolo
+della sezione e la scritta *"[in costruzione] Questa sezione arriverà presto."*
+
+### Contatti del footer
+
+Anche i contatti sono in **`src/config/sito.js`**, nella lista `CONTATTI`. Sono **valori segnaposto**
+(es. `info@sec4her.it`, `@sec4her`): sostituiscili con quelli reali prima di pubblicare il sito.
+
+---
+
+## 7. Stile e colori del brand
 
 I colori sono definiti una sola volta in `src/index.css` e si usano come classi Tailwind:
 
@@ -248,16 +362,19 @@ I colori sono definiti una sola volta in `src/index.css` e si usano come classi 
   --color-brand: #6d44e0;
   --color-crimson: #9b2c4f;
   --color-hack: #1f8a4c;
+  --color-ink-text: #1a1a24;
 }
 ```
 
 | Colore | Codice | Classe Tailwind | Dove si usa |
 | --- | --- | --- | --- |
-| Nero (sfondo) | `#0B0B12` | `bg-ink` | Sfondo della pagina e dei campi di testo |
-| Bianco-grigio (testo) | `#E2E8F0` | `text-text` | Testo principale, titoli, etichette |
-| Viola (principale) | `#6D44E0` | `bg-brand` / `text-brand` | Pulsanti, link, bordo dei campi selezionati, il "4" del logo testuale |
-| Cremisi (accento) | `#9B2C4F` | `border-crimson` | Linea in cima alla card, bordo dei campi con errore |
-| Verde (dettagli) | `#1F8A4C` | `text-hack` | Slogan `> HACK THE FUTURE_`, simbolo `$` nei titoli, messaggi di conferma `[ok]` |
+| Nero (sfondo) | `#0B0B12` | `bg-ink` | Sfondo di Accedi/Registrati, header, footer, menu |
+| Bianco-grigio (testo) | `#E2E8F0` | `text-text` | Testo sulle parti scure: titoli, etichette, footer |
+| Bianco | `#FFFFFF` | `bg-white` | Parte centrale della home e delle pagine del menu |
+| Grigio scuro (testo) | `#1A1A24` | `text-ink-text` | Testo sulla parte bianca |
+| Viola (principale) | `#6D44E0` | `bg-brand` / `text-brand` | Pulsanti, link, titolo della home, bordo delle card, il "4" del logo testuale |
+| Cremisi (accento) | `#9B2C4F` | `border-crimson` | Linea della card di login, sotto l'header, sopra il footer, sotto "HACK THE FUTURE"; errori |
+| Verde (dettagli) | `#1F8A4C` | `text-hack` | Slogan `> HACK THE FUTURE_`, simboli `$` e `>` nei titoli e nel menu, messaggi `[ok]` |
 
 Altri dettagli:
 
@@ -267,11 +384,12 @@ Altri dettagli:
   JetBrains Mono, Fira Code, Cascadia Code o Consolas, a seconda di cosa è installato sul computer.
   Il resto del testo usa il font di sistema.
 - Il **cursore** `_` dopo lo slogan lampeggia come in un terminale.
-- Il layout è **centrato** e si adatta al telefono (larghezza massima della card circa 450px).
+- Il layout è **centrato** e si adatta al telefono: le card della home sono 1 per riga sul telefono, 2 sul tablet
+  e 4 sullo schermo grande; l'header resta fisso in alto mentre si scorre.
 
 ---
 
-## 7. Come testare la login
+## 8. Come testare la login
 
 Avvia l'app con `npm run dev` e prova questi casi:
 
@@ -289,20 +407,34 @@ Avvia l'app con `npm run dev` e prova questi casi:
 **Pagina Accedi** (http://localhost:5173/accedi)
 
 - [ ] **Campi vuoti** – premi "Accedi" → errori su email e password.
-- [ ] **Dati corretti** – email valida e password di almeno 8 caratteri → riquadro verde *"[ok] Dati validi…"*.
+- [ ] **Credenziali sbagliate** – email `prova@sec4her.com`, password `Password1` → riquadro
+      *"[errore] Email o password non corretti"*.
+- [ ] **Credenziali di test** – email `test@sec4her.com`, password `Test1234!` → arrivi su `/home`.
 - [ ] **Link** – "Registrati" porta alla registrazione; "Accedi" nella registrazione riporta qui.
 - [ ] **Indirizzo sbagliato** – apri http://localhost:5173/pagina-che-non-esiste → vieni riportata su Accedi.
+
+**Home e menu** (dopo il login)
+
+- [ ] **Pagina protetta** – in una finestra in incognito apri http://localhost:5173/home → vieni portata su Accedi;
+      dopo il login torni su `/home`.
+- [ ] **Logo** – clicca il logo in alto a sinistra → torni su `/home`.
+- [ ] **Menu** – clicca ☰ → si apre il menu con le 7 voci ed "Esci".
+- [ ] **Chiusura del menu** – il menu si chiude cliccando una voce, cliccando fuori, premendo ✕ o il tasto Esc.
+- [ ] **Pagine segnaposto** – ogni voce apre una pagina con il suo titolo e lo stesso header e footer.
+- [ ] **Card** – le 4 card della home portano a Lezioni, Eventi, CTF e Bug Bounty.
+- [ ] **Ricarica** – premi F5 su `/home` → resti dentro.
+- [ ] **Esci** – dal menu premi "Esci" → torni su Accedi; riaprendo `/home` vieni rimandata ad Accedi.
 
 **Vista da telefono**
 
 - [ ] Nel browser premi **F12** per aprire gli strumenti per sviluppatori.
 - [ ] Clicca l'icona del telefono/tablet (*Toggle device toolbar*, oppure `Ctrl + Shift + M`).
-- [ ] Scegli un modello (es. iPhone o Pixel) e controlla che la card sia centrata, leggibile e che non serva
-      scorrere in orizzontale.
+- [ ] Scegli un modello (es. iPhone o Pixel) e controlla Accedi, Registrati e Home: tutto leggibile, card una
+      sotto l'altra, menu ☰ che si apre senza uscire dallo schermo e nessuno scorrimento in orizzontale.
 
 ---
 
-## 8. Come lavoriamo in due
+## 9. Come lavoriamo in due
 
 Lavoriamo **ognuna sul proprio branch** e uniamo le modifiche su `main` solo tramite **pull request**.
 Non si fanno commit direttamente su `main`.
@@ -348,15 +480,16 @@ clicca **"Merge pull request"**. Dopo il merge, entrambe tornano su `main` e fan
 
 ---
 
-## 9. Prossimi passi
+## 10. Prossimi passi
 
 - **Collegare un database per salvare davvero gli account**, ad esempio **Supabase** (quello previsto nel
   documento di architettura: database PostgreSQL con login già pronto) oppure **Firebase**. Le password non vanno
   mai salvate a mano: ci pensa il servizio di autenticazione.
-- **Far funzionare davvero "Accedi"**: oggi mostra solo il messaggio "Dati validi"; andrà collegato al login del
-  database, con errori come *"Email o password non corrette"*.
+- **Sostituire le credenziali di test con un login vero** (es. Supabase Auth) ed eliminare
+  `src/config/credenzialiTest.js`.
 - **Aggiungere `public/logo.png`**: il codice lo cerca già, ma il file non è ancora nel repository.
-- **Pagina dopo l'accesso** (es. area personale) e pulsante per uscire (logout): oggi non esistono.
+- **Riempire le pagine del menu** (About us, Lezioni, Eventi, Meeting, CTF Groups, Bug Bounty Group, Contact us),
+  oggi segnaposto, e sostituire i testi e i **contatti segnaposto** di home e footer con quelli reali.
 - **Recupero password** ("Password dimenticata?"), oggi non presente.
 - **Controlli lato server**: quando ci sarà un database, i controlli sui campi andranno ripetuti anche lì,
   perché quelli nel browser si possono aggirare.

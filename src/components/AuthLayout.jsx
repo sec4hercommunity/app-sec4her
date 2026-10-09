@@ -1,25 +1,12 @@
-import { useState } from 'react'
+import Logo from './Logo.jsx'
 
 // Contenitore comune per le pagine di autenticazione: logo, titolo e card centrata.
 export default function AuthLayout({ titolo, sottotitolo, children }) {
-  const [logoMancante, setLogoMancante] = useState(false)
-
   return (
     <main className="flex min-h-svh items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <header className="mb-8 flex flex-col items-center text-center">
-          {logoMancante ? (
-            <span className="font-mono text-3xl font-bold tracking-tight text-text">
-              sec<span className="text-brand">4</span>her
-            </span>
-          ) : (
-            <img
-              src="/logo.png"
-              alt="Sec4Her"
-              className="h-24 w-auto sm:h-28"
-              onError={() => setLogoMancante(true)}
-            />
-          )}
+          <Logo className="h-24 w-auto sm:h-28" classeTesto="text-3xl" />
           <p className="mt-3 font-mono text-xs font-bold tracking-[0.3em] text-hack">
             &gt; HACK THE FUTURE<span className="cursor-blink">_</span>
           </p>

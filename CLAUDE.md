@@ -3,7 +3,9 @@
 Web app di **Sec4Her**, una community sulla cybersecurity fatta da donne, per donne.
 Slogan: **HACK THE FUTURE**. Tutti i testi dell'interfaccia sono in **italiano**.
 
-Stato attuale: pagine **Accedi** (`/accedi`) e **Registrati** (`/registrati`) con validazione lato client.
+Stato attuale: pagine **Accedi** (`/accedi`) e **Registrati** (`/registrati`) con validazione lato client,
+**Home** riservata (`/home`) con header, menu ☰, footer e pagine segnaposto per le voci del menu.
+Il login usa solo le **credenziali di test** in `src/config/credenzialiTest.js` (da sostituire con Supabase Auth).
 La registrazione **non salva ancora dati**: mostra solo un messaggio di conferma. Il collegamento al database
 (previsto Supabase, vedi `sec4her-architettura-sito.pdf`) verrà fatto in seguito.
 

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/contesto.js'
 import AuthLayout from '../components/AuthLayout.jsx'
 import Campo from '../components/Campo.jsx'
 import Pulsante from '../components/Pulsante.jsx'
@@ -8,12 +9,18 @@ import { validaEmail, validaPassword } from '../lib/validazione.js'
 export default function Accedi() {
   const [valori, setValori] = useState({ email: '', password: '' })
   const [errori, setErrori] = useState({})
-  const [inviato, setInviato] = useState(false)
+  const [erroreLogin, setErroreLogin] = useState('')
+  const { utente, accedi } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  // Dopo il login si torna alla pagina riservata richiesta, altrimenti alla home.
+  const destinazione = location.state?.da || '/home'
 
   function aggiorna(e) {
     const { name, value } = e.target
     setValori((v) => ({ ...v, [name]: value }))
     if (errori[name]) setErrori((er) => ({ ...er, [name]: '' }))
+    if (erroreLogin) setErroreLogin('')
   }
 
   function invia(e) {
@@ -23,16 +30,21 @@ export default function Accedi() {
       password: validaPassword(valori.password),
     }
     setErrori(nuoviErrori)
-    // L'autenticazione vera verrà collegata al database in seguito.
-    setInviato(!Object.values(nuoviErrori).some(Boolean))
+    if (Object.values(nuoviErrori).some(Boolean)) return
+
+    // Per ora confronta con le credenziali di test (src/config/credenzialiTest.js).
+    if (accedi(valori.email, valori.password)) navigate(destinazione, { replace: true })
+    else setErroreLogin('Email o password non corretti')
   }
+
+  // Chi ha già fatto il login non vede di nuovo questa pagina.
+  if (utente) return <Navigate to={destinazione} replace />
 
   return (
     <AuthLayout titolo="Accedi" sottotitolo="Bentornata nella community.">
-      {inviato && (
-        <div role="status" className="mb-5 rounded-lg border border-hack/50 bg-hack/10 px-4 py-3 text-sm">
-          <span className="font-mono font-bold text-hack">[ok]</span> Dati validi. L'accesso sarà attivo
-          appena collegheremo il database.
+      {erroreLogin && (
+        <div role="alert" className="mb-5 rounded-lg border border-crimson bg-crimson/15 px-4 py-3 text-sm">
+          <span className="font-mono font-bold text-[#e0587f]">[errore]</span> {erroreLogin}
         </div>
       )}
 
