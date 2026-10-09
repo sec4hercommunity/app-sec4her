@@ -18,7 +18,7 @@ La registrazione **non salva ancora dati**: mostra solo un messaggio di conferma
 ## Struttura
 
 ```
-public/logo.png            logo usato nelle pagine (fallback testuale se manca)
+public/logo.svg            logo usato nelle pagine (fallback testuale se manca)
 src/App.jsx                rotte
 src/pages/                 Accedi.jsx, Registrati.jsx
 src/components/            AuthLayout, Campo (input + errore), Pulsante

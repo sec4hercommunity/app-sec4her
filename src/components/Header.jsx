@@ -37,9 +37,9 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-20 border-b-2 border-crimson bg-ink">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+      <div className="flex w-full items-center justify-between px-6 py-2">
         <Link to="/home" aria-label="Vai alla home" className="flex items-center">
-          <Logo className="h-10 w-auto sm:h-12" />
+          <Logo className="block h-12 w-12 rounded-md" />
         </Link>
 
         <div ref={contenitore} className="relative">
@@ -49,7 +49,7 @@ export default function Header() {
             aria-expanded={aperto}
             aria-controls="menu-principale"
             aria-label={aperto ? 'Chiudi il menu' : 'Apri il menu'}
-            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg text-2xl text-text transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="-mr-3 flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg text-2xl text-text transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
           >
             {aperto ? '✕' : '☰'}
           </button>

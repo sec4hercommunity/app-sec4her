@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/logo.png" alt="Logo Sec4Her" width="180" />
+  <img src="public/logo.svg" alt="Logo Sec4Her" width="180" />
 </p>
 
 <h1 align="center">Sec4Her</h1>
@@ -13,8 +13,6 @@ Questo repository contiene la **web app** di Sec4Her. Per ora l'app ha le pagine
 (con controlli sui campi), una **Home** riservata con menu, e alcune pagine segnaposto. Il login funziona solo con
 delle **credenziali di test**: il collegamento a un database per gestire davvero gli account verrà fatto più avanti.
 
-> ℹ️ Il file `public/logo.png` non è ancora presente nel repository: finché non viene aggiunto, l'immagine qui
-> sopra non si vede e nell'app compare al suo posto la scritta **sec4her**.
 
 ---
 
@@ -114,8 +112,8 @@ Si trovano nella sezione `scripts` di `package.json`:
 ```
 app-sec4her/
 ├── public/                     File statici, serviti così come sono
-│   └── favicon.svg             Iconcina mostrata nella scheda del browser
-│                               (qui andrà anche logo.png, ancora da aggiungere)
+│   ├── favicon.svg             Iconcina mostrata nella scheda del browser
+│   └── logo.svg                Logo di Sec4Her (immagine vettoriale, nitida a ogni dimensione)
 ├── src/                        Tutto il codice dell'app
 │   ├── main.jsx                Punto di partenza: carica gli stili e "monta" l'app nella pagina
 │   ├── App.jsx                 Elenco delle pagine (rotte) e dei loro indirizzi
@@ -123,13 +121,13 @@ app-sec4her/
 │   ├── pages/                  Le pagine complete
 │   │   ├── Accedi.jsx          Pagina di accesso (/accedi)
 │   │   ├── Registrati.jsx      Pagina di registrazione (/registrati)
-│   │   ├── Home.jsx            Home riservata (/home): titolo, descrizione e card delle attività
+│   │   ├── Home.jsx            Home riservata (/home): logo grande e presentazione dell'Academy
 │   │   └── Segnaposto.jsx      Pagina provvisoria usata per tutte le voci del menu
 │   ├── components/             Pezzi riutilizzati dalle pagine
 │   │   ├── AuthLayout.jsx      Cornice di Accedi/Registrati: logo, slogan, card centrata
 │   │   ├── Campo.jsx           Campo di testo con etichetta e messaggio di errore
 │   │   ├── Pulsante.jsx        Pulsante viola principale
-│   │   ├── Logo.jsx            Logo (public/logo.png) con scritta "sec4her" se l'immagine manca
+│   │   ├── Logo.jsx            Logo (public/logo.svg) con scritta "sec4her" se l'immagine manca
 │   │   ├── LayoutSito.jsx      Struttura delle pagine riservate: header + contenuto bianco + footer
 │   │   ├── Header.jsx          Barra in alto: logo e menu ☰ con il pulsante "Esci"
 │   │   ├── Footer.jsx          Barra in basso: contatti e copyright
@@ -309,19 +307,18 @@ torni automaticamente alla pagina che avevi chiesto.
 
 Ogni pagina riservata ha tre parti (`src/components/LayoutSito.jsx`):
 
-1. **Header** scuro (`Header.jsx`) con una linea cremisi sotto:
-   - a sinistra il **logo**, cliccabile, che riporta a `/home`;
-   - a destra l'icona **☰** che apre il menu.
-2. **Parte centrale bianca** (`Home.jsx`):
-   - titolo **"Benvenuta in Sec4Her Academy"** in viola, monospace grassetto;
-   - sottotitolo **HACK THE FUTURE** con una linea cremisi sotto;
-   - un paragrafo di descrizione dell'Academy;
-   - 4 card con bordo viola: **Lezioni, Eventi, CTF, Bug Bounty**, ognuna cliccabile verso la sua pagina.
+1. **Header** scuro (`Header.jsx`) a tutta larghezza, con una linea cremisi sotto:
+   - a sinistra l'immagine del **logo** (alta 48px), cliccabile, che riporta a `/home`;
+   - a destra, a circa 24px dal bordo, l'icona **☰** che apre il menu.
+2. **Parte centrale bianca** (`Home.jsx`), centrata in verticale:
+   - il **logo grande** dentro un riquadro scuro (`#0B0B12`) con angoli arrotondati e una leggera ombra;
+   - accanto, il **paragrafo di presentazione** dell'Academy in grigio scuro (`#1A1A24`).
+   - Su computer il logo è a sinistra e il testo a destra; su telefono il logo è sopra e il testo sotto.
 3. **Footer** scuro (`Footer.jsx`): logo, slogan, sezione **Contatti** (email, Instagram, LinkedIn, GitHub) e
    **"© 2026 Sec4Her – Hack the Future"**.
 
-I testi della home (descrizione e card) sono in cima a `src/pages/Home.jsx`, nelle costanti `DESCRIZIONE` e
-`ATTIVITA`: sono **testi segnaposto**, da modificare liberamente.
+Il testo della presentazione è in cima a `src/pages/Home.jsx`, nella costante `DESCRIZIONE`: è un **testo
+segnaposto**, da modificare liberamente.
 
 ### Il menu ☰
 
@@ -372,8 +369,8 @@ I colori sono definiti una sola volta in `src/index.css` e si usano come classi 
 | Bianco-grigio (testo) | `#E2E8F0` | `text-text` | Testo sulle parti scure: titoli, etichette, footer |
 | Bianco | `#FFFFFF` | `bg-white` | Parte centrale della home e delle pagine del menu |
 | Grigio scuro (testo) | `#1A1A24` | `text-ink-text` | Testo sulla parte bianca |
-| Viola (principale) | `#6D44E0` | `bg-brand` / `text-brand` | Pulsanti, link, titolo della home, bordo delle card, il "4" del logo testuale |
-| Cremisi (accento) | `#9B2C4F` | `border-crimson` | Linea della card di login, sotto l'header, sopra il footer, sotto "HACK THE FUTURE"; errori |
+| Viola (principale) | `#6D44E0` | `bg-brand` / `text-brand` | Pulsanti, link, titoli delle pagine segnaposto, il "4" del logo testuale |
+| Cremisi (accento) | `#9B2C4F` | `border-crimson` | Linea della card di login, sotto l'header, sopra il footer, sotto i titoli delle pagine segnaposto; errori |
 | Verde (dettagli) | `#1F8A4C` | `text-hack` | Slogan `> HACK THE FUTURE_`, simboli `$` e `>` nei titoli e nel menu, messaggi `[ok]` |
 
 Altri dettagli:
@@ -384,8 +381,8 @@ Altri dettagli:
   JetBrains Mono, Fira Code, Cascadia Code o Consolas, a seconda di cosa è installato sul computer.
   Il resto del testo usa il font di sistema.
 - Il **cursore** `_` dopo lo slogan lampeggia come in un terminale.
-- Il layout è **centrato** e si adatta al telefono: le card della home sono 1 per riga sul telefono, 2 sul tablet
-  e 4 sullo schermo grande; l'header resta fisso in alto mentre si scorre.
+- Il layout è **centrato** e si adatta al telefono: nella home logo e testo sono affiancati su computer e uno
+  sopra l'altro su telefono; l'header resta fisso in alto mentre si scorre.
 
 ---
 
@@ -421,7 +418,7 @@ Avvia l'app con `npm run dev` e prova questi casi:
 - [ ] **Menu** – clicca ☰ → si apre il menu con le 7 voci ed "Esci".
 - [ ] **Chiusura del menu** – il menu si chiude cliccando una voce, cliccando fuori, premendo ✕ o il tasto Esc.
 - [ ] **Pagine segnaposto** – ogni voce apre una pagina con il suo titolo e lo stesso header e footer.
-- [ ] **Card** – le 4 card della home portano a Lezioni, Eventi, CTF e Bug Bounty.
+- [ ] **Home** – su computer il logo grande (nel riquadro scuro) è a sinistra e il testo a destra.
 - [ ] **Ricarica** – premi F5 su `/home` → resti dentro.
 - [ ] **Esci** – dal menu premi "Esci" → torni su Accedi; riaprendo `/home` vieni rimandata ad Accedi.
 
@@ -429,8 +426,8 @@ Avvia l'app con `npm run dev` e prova questi casi:
 
 - [ ] Nel browser premi **F12** per aprire gli strumenti per sviluppatori.
 - [ ] Clicca l'icona del telefono/tablet (*Toggle device toolbar*, oppure `Ctrl + Shift + M`).
-- [ ] Scegli un modello (es. iPhone o Pixel) e controlla Accedi, Registrati e Home: tutto leggibile, card una
-      sotto l'altra, menu ☰ che si apre senza uscire dallo schermo e nessuno scorrimento in orizzontale.
+- [ ] Scegli un modello (es. iPhone o Pixel) e controlla Accedi, Registrati e Home: tutto leggibile, nella home
+      logo sopra e testo sotto, menu ☰ che si apre senza uscire dallo schermo e nessuno scorrimento in orizzontale.
 
 ---
 
@@ -487,7 +484,6 @@ clicca **"Merge pull request"**. Dopo il merge, entrambe tornano su `main` e fan
   mai salvate a mano: ci pensa il servizio di autenticazione.
 - **Sostituire le credenziali di test con un login vero** (es. Supabase Auth) ed eliminare
   `src/config/credenzialiTest.js`.
-- **Aggiungere `public/logo.png`**: il codice lo cerca già, ma il file non è ancora nel repository.
 - **Riempire le pagine del menu** (About us, Lezioni, Eventi, Meeting, CTF Groups, Bug Bounty Group, Contact us),
   oggi segnaposto, e sostituire i testi e i **contatti segnaposto** di home e footer con quelli reali.
 - **Recupero password** ("Password dimenticata?"), oggi non presente.
