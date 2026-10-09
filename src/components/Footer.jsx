@@ -21,29 +21,34 @@ const ICONE = {
 export default function Footer() {
   return (
     <footer className="border-t border-crimson bg-ink px-4 py-6 text-center text-text">
-      <ul className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm">
-        {CONTATTI.map((c, i) => (
-          <Fragment key={c.nome}>
-            {i > 0 && (
-              <li aria-hidden="true" className="text-text/40">
-                ·
+      <div className="flex flex-col items-center justify-center gap-x-4 gap-y-2 sm:flex-row">
+        <h2 className="font-mono text-lg font-bold text-text">
+          <span className="text-hack">$</span> Contatti:
+        </h2>
+        <ul className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm">
+          {CONTATTI.map((c, i) => (
+            <Fragment key={c.nome}>
+              {i > 0 && (
+                <li aria-hidden="true" className="text-text/40">
+                  ·
+                </li>
+              )}
+              <li>
+                <a
+                  href={c.link}
+                  target={c.link.startsWith('http') ? '_blank' : undefined}
+                  rel="noopener noreferrer"
+                  aria-label={`${c.nome}: ${c.testo}`}
+                  className="inline-flex items-center gap-1.5 font-bold text-brand transition hover:brightness-150"
+                >
+                  {ICONE[c.icona]}
+                  {c.testo}
+                </a>
               </li>
-            )}
-            <li>
-              <a
-                href={c.link}
-                target={c.link.startsWith('http') ? '_blank' : undefined}
-                rel="noopener noreferrer"
-                aria-label={`${c.nome}: ${c.testo}`}
-                className="inline-flex items-center gap-1.5 font-bold text-brand transition hover:brightness-150"
-              >
-                {ICONE[c.icona]}
-                {c.testo}
-              </a>
-            </li>
-          </Fragment>
-        ))}
-      </ul>
+            </Fragment>
+          ))}
+        </ul>
+      </div>
 
       <p className="mt-3 font-mono text-xs font-bold tracking-[0.3em] text-hack">&gt; HACK THE FUTURE_</p>
 
