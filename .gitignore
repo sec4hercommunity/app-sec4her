@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# File di lavoro locali (non vanno su GitHub)
+prompt.txt
+tmpapp/
