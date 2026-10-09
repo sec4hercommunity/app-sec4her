@@ -1,0 +1,21 @@
+Il progetto è vuoto. Crea un'app web per Sec4Her, una community sulla cybersecurity per donne (slogan: "HACK THE FUTURE").
+
+Tecnologie: React + Vite + Tailwind CSS. Testi dell'interfaccia in italiano.
+
+1. Crea un branch chiamato "login".
+2. Sposta il file logo.png che trovi nella cartella principale dentro la cartella public/ e usalo nelle pagine.
+3. Crea due pagine:
+   - "Accedi": email, password, pulsante "Accedi", link "Non hai un account? Registrati"
+   - "Registrati": nome, email, password, conferma password, pulsante "Crea account", link "Hai già un account? Accedi"
+   Con controlli sui campi: email valida, password di almeno 8 caratteri, le due password uguali, messaggi di errore chiari.
+4. Stile ispirato al logo:
+   - sfondo scuro quasi nero (#0B0B12)
+   - testo principale bianco-grigio (#E2E8F0)
+   - colore principale viola (#6D44E0) per pulsanti e link
+   - linea/accento cremisi (#9B2C4F)
+   - piccoli dettagli verdi (#1F8A4C)
+   - font monospace in grassetto per i titoli (stile terminale/hacker)
+   - aspetto moderno, centrato, adatto anche al telefono
+5. Per ora la registrazione non deve salvare davvero i dati: mostra solo un messaggio di conferma. Il collegamento a un database lo faremo dopo.
+6. Crea un file CLAUDE.md con: descrizione del progetto, tecnologie, colori del brand, comandi per avviare l'app, e la regola che lavoriamo in due su branch separati con pull request.
+7. Alla fine avvia l'app e dimmi l'indirizzo per vederla nel browser.
