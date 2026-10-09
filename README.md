@@ -132,7 +132,7 @@ app-sec4her/
 │   │   ├── Logo.jsx            Logo (public/logo.svg) con scritta "sec4her" se l'immagine manca
 │   │   ├── LayoutSito.jsx      Struttura delle pagine riservate: header + contenuto bianco + footer
 │   │   ├── Header.jsx          Barra in alto: logo e menu ☰ con il pulsante "Esci"
-│   │   ├── Footer.jsx          Barra in basso: contatti e copyright
+│   │   ├── Footer.jsx          Barra in basso: contatti (Email · Instagram), slogan e copyright
 │   │   └── RottaProtetta.jsx   Blocca le pagine riservate a chi non ha fatto il login
 │   ├── auth/
 │   │   ├── AuthProvider.jsx    Stato del login: accedi, esci, utente collegata
@@ -316,8 +316,10 @@ Ogni pagina riservata ha tre parti (`src/components/LayoutSito.jsx`):
    - il **logo grande** dentro un riquadro scuro (`#0B0B12`) con angoli arrotondati e una leggera ombra;
    - accanto, il **paragrafo di presentazione** dell'Academy in grigio scuro (`#1A1A24`).
    - Su computer il logo è a sinistra e il testo a destra; su telefono il logo è sopra e il testo sotto.
-3. **Footer** scuro (`Footer.jsx`): logo, slogan, sezione **Contatti** (email, Instagram, LinkedIn, GitHub) e
-   **"© 2026 Sec4Her – Hack the Future"**.
+3. **Footer** scuro e compatto (`Footer.jsx`), tutto centrato, con una sottile linea cremisi in alto:
+   - riga 1: i contatti **Email · Instagram**, con una piccola icona viola (più chiara al passaggio del mouse);
+   - riga 2: lo slogan verde **`> HACK THE FUTURE_`**;
+   - riga 3: **"© 2026 Sec4Her"** in piccolo.
 
 Il testo della presentazione è in cima a `src/pages/Home.jsx`, nella costante `DESCRIZIONE`: è un **testo
 segnaposto**, da modificare liberamente.

@@ -12,9 +12,8 @@ export const VOCI_MENU = [
 ]
 
 // Contatti del footer: valori SEGNAPOSTO, da sostituire con quelli reali.
+// "icona" sceglie il disegno mostrato prima del testo (vedi Footer.jsx).
 export const CONTATTI = [
-  { nome: 'Email', testo: 'info@sec4her.it', link: 'mailto:info@sec4her.it' },
-  { nome: 'Instagram', testo: '@sec4her', link: 'https://instagram.com/sec4her' },
-  { nome: 'LinkedIn', testo: 'Sec4Her', link: 'https://www.linkedin.com/company/sec4her' },
-  { nome: 'GitHub', testo: 'sec4hercommunity', link: 'https://github.com/sec4hercommunity' },
+  { nome: 'Email', icona: 'email', testo: 'info@sec4her.it', link: 'mailto:info@sec4her.it' },
+  { nome: 'Instagram', icona: 'instagram', testo: '@sec4her', link: 'https://instagram.com/sec4her' },
 ]
