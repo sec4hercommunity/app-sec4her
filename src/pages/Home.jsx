@@ -12,7 +12,7 @@ export default function Home() {
     <div className="flex min-h-[calc(100svh-12rem)] items-center px-4 py-12 sm:px-6 sm:py-20">
       <section className="mx-auto grid w-full max-w-5xl items-center gap-8 md:grid-cols-2 md:gap-14">
         <div className="mx-auto w-full max-w-sm rounded-2xl bg-ink p-4 shadow-xl shadow-ink/25 sm:p-6 md:max-w-none">
-          <Logo className="block aspect-square w-full rounded-xl" classeTesto="block py-16 text-center text-5xl" />
+          <Logo src="/logo-home.svg" className="block h-auto w-full rounded-xl" classeTesto="block py-16 text-center text-5xl" />
         </div>
 
         <p className="text-base leading-relaxed text-ink-text sm:text-lg md:text-xl">{DESCRIZIONE}</p>

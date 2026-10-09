@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
-// Logo da public/logo.svg; se il file manca mostra la scritta "sec4her".
-export default function Logo({ className = 'h-10 w-auto', classeTesto = 'text-xl' }) {
+// Logo (di default public/logo.svg); se l'immagine manca mostra la scritta "sec4her".
+export default function Logo({ src = '/logo.svg', className = 'h-10 w-auto', classeTesto = 'text-xl' }) {
   const [mancante, setMancante] = useState(false)
 
   if (mancante) {
@@ -11,5 +11,5 @@ export default function Logo({ className = 'h-10 w-auto', classeTesto = 'text-xl
       </span>
     )
   }
-  return <img src="/logo.svg" alt="Sec4Her" className={className} onError={() => setMancante(true)} />
+  return <img src={src} alt="Sec4Her" className={className} onError={() => setMancante(true)} />
 }

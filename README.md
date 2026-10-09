@@ -113,7 +113,9 @@ Si trovano nella sezione `scripts` di `package.json`:
 app-sec4her/
 ├── public/                     File statici, serviti così come sono
 │   ├── favicon.svg             Iconcina mostrata nella scheda del browser
-│   └── logo.svg                Logo di Sec4Her (immagine vettoriale, nitida a ogni dimensione)
+│   ├── logo.svg                Logo completo di Sec4Her (originale, immagine vettoriale)
+│   ├── logo-header.svg         Logo ritagliato per l'header: solo "sec", linea cremisi e "4her"
+│   └── logo-home.svg           Logo completo ritagliato (senza spazio vuoto) per la home
 ├── src/                        Tutto il codice dell'app
 │   ├── main.jsx                Punto di partenza: carica gli stili e "monta" l'app nella pagina
 │   ├── App.jsx                 Elenco delle pagine (rotte) e dei loro indirizzi
@@ -308,7 +310,7 @@ torni automaticamente alla pagina che avevi chiesto.
 Ogni pagina riservata ha tre parti (`src/components/LayoutSito.jsx`):
 
 1. **Header** scuro (`Header.jsx`) a tutta larghezza, con una linea cremisi sotto:
-   - a sinistra l'immagine del **logo** (alta 48px), cliccabile, che riporta a `/home`;
+   - a sinistra il **logo ritagliato** (`logo-header.svg`, alto 56px su computer e 44px su telefono), cliccabile, che riporta a `/home`;
    - a destra, a circa 24px dal bordo, l'icona **☰** che apre il menu.
 2. **Parte centrale bianca** (`Home.jsx`), centrata in verticale:
    - il **logo grande** dentro un riquadro scuro (`#0B0B12`) con angoli arrotondati e una leggera ombra;

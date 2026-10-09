@@ -37,9 +37,9 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-20 border-b-2 border-crimson bg-ink">
-      <div className="flex w-full items-center justify-between px-6 py-2">
+      <div className="flex w-full items-center justify-between px-6 py-3">
         <Link to="/home" aria-label="Vai alla home" className="flex items-center">
-          <Logo className="block h-12 w-12 rounded-md" />
+          <Logo src="/logo-header.svg" className="block h-11 w-auto md:h-14" />
         </Link>
 
         <div ref={contenitore} className="relative">

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="187 264 306 136" role="img" aria-label="sec4her">
+  <!-- Versione ritagliata del logo per l'header: solo "sec", linea cremisi e "4her", senza sfondo -->
+  <text x="340" y="310" text-anchor="middle" font-family="'Courier New', 'Lucida Console', monospace" font-size="72" font-weight="700" fill="#E2E8F0" letter-spacing="4">sec</text>
+  <rect x="195" y="330" width="290" height="3" rx="1" fill="#9B2C4F" />
+  <text x="340" y="385" text-anchor="middle" font-family="'Courier New', 'Lucida Console', monospace" font-size="72" font-weight="700" fill="#6D44E0" letter-spacing="4">4her</text>
+</svg>
