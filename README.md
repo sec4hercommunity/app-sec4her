@@ -173,8 +173,11 @@ app-sec4her/
 ├── .oxlintrc.json              Regole del controllo del codice (oxlint)
 ├── .gitignore                  File che Git deve ignorare (node_modules, dist, .env.local, prompt.txt, tmpapp/)
 ├── CLAUDE.md                   Istruzioni per Claude Code: progetto, colori, comandi, regole
-├── sec4her-architettura-sito.pdf   Documento sull'architettura prevista del sito
-└── sec4her-struttura-corsi.pdf     Documento sul percorso formativo
+└── docs/
+    ├── architettura.md                 Architettura della piattaforma (versione Markdown del PDF)
+    ├── struttura-corsi.md              Struttura del percorso formativo (versione Markdown del PDF)
+    ├── sec4her-architettura-sito.pdf   Documento originale sull'architettura del sito
+    └── sec4her-struttura-corsi.pdf     Documento originale sul percorso formativo
 ```
 
 ---
