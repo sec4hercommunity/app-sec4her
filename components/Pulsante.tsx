@@ -1,5 +1,7 @@
+import type { ButtonHTMLAttributes } from 'react'
+
 // Pulsante principale nel viola del brand.
-export default function Pulsante({ children, ...props }) {
+export default function Pulsante({ children, ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       type="submit"

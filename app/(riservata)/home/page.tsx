@@ -1,4 +1,4 @@
-import Logo from '../components/Logo.jsx'
+import Logo from '@/components/Logo'
 
 // Testo segnaposto: modificalo liberamente.
 const DESCRIZIONE =

@@ -1,24 +1,28 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import AuthLayout from '../components/AuthLayout.jsx'
-import Campo from '../components/Campo.jsx'
-import Pulsante from '../components/Pulsante.jsx'
-import { PASSWORD_MIN, validaConferma, validaEmail, validaNome, validaPassword } from '../lib/validazione.js'
+'use client'
 
-const VUOTO = { nome: '', email: '', password: '', conferma: '' }
+import { useState, type ChangeEvent, type FormEvent } from 'react'
+import Link from 'next/link'
+import AuthLayout from '@/components/AuthLayout'
+import Campo from '@/components/Campo'
+import Pulsante from '@/components/Pulsante'
+import { PASSWORD_MIN, validaConferma, validaEmail, validaNome, validaPassword } from '@/lib/validazione'
+
+type Valori = { nome: string; email: string; password: string; conferma: string }
+
+const VUOTO: Valori = { nome: '', email: '', password: '', conferma: '' }
 
 export default function Registrati() {
-  const [valori, setValori] = useState(VUOTO)
-  const [errori, setErrori] = useState({})
-  const [registrata, setRegistrata] = useState(null)
+  const [valori, setValori] = useState<Valori>(VUOTO)
+  const [errori, setErrori] = useState<Partial<Record<keyof Valori, string>>>({})
+  const [registrata, setRegistrata] = useState<string | null>(null)
 
-  function aggiorna(e) {
+  function aggiorna(e: ChangeEvent<HTMLInputElement>) {
     const { name, value } = e.target
     setValori((v) => ({ ...v, [name]: value }))
-    if (errori[name]) setErrori((er) => ({ ...er, [name]: '' }))
+    if (errori[name as keyof Valori]) setErrori((er) => ({ ...er, [name]: '' }))
   }
 
-  function invia(e) {
+  function invia(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const nuoviErrori = {
       nome: validaNome(valori.nome),
@@ -45,7 +49,7 @@ export default function Registrati() {
           </p>
         </div>
         <Link
-          to="/accedi"
+          href="/accedi"
           className="mt-6 block w-full rounded-lg bg-brand px-4 py-3 text-center font-mono font-bold text-white transition hover:bg-[#7d58ea]"
         >
           Vai ad Accedi
@@ -102,7 +106,7 @@ export default function Registrati() {
 
       <p className="mt-6 text-center text-sm text-text/70">
         Hai già un account?{' '}
-        <Link to="/accedi" className="font-bold text-brand hover:underline">
+        <Link href="/accedi" className="font-bold text-brand hover:underline">
           Accedi
         </Link>
       </p>

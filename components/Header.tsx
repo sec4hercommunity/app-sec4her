@@ -1,22 +1,25 @@
+'use client'
+
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../auth/contesto.js'
-import { VOCI_MENU } from '../config/sito.js'
-import Logo from './Logo.jsx'
+import { useAuth } from '@/auth/contesto'
+import { VOCI_MENU } from '@/config/sito'
+import Logo from './Logo'
 
 export default function Header() {
   const [aperto, setAperto] = useState(false)
-  const contenitore = useRef(null)
+  const contenitore = useRef<HTMLDivElement>(null)
   const { esci } = useAuth()
-  const navigate = useNavigate()
+  const router = useRouter()
 
   // Chiude il menu cliccando fuori o premendo Esc.
   useEffect(() => {
     if (!aperto) return
-    function clickFuori(e) {
-      if (contenitore.current && !contenitore.current.contains(e.target)) setAperto(false)
+    function clickFuori(e: MouseEvent | TouchEvent) {
+      if (contenitore.current && !contenitore.current.contains(e.target as Node)) setAperto(false)
     }
-    function tasto(e) {
+    function tasto(e: KeyboardEvent) {
       if (e.key === 'Escape') setAperto(false)
     }
     document.addEventListener('mousedown', clickFuori)
@@ -32,13 +35,13 @@ export default function Header() {
   function logout() {
     setAperto(false)
     esci()
-    navigate('/accedi', { replace: true })
+    router.replace('/accedi')
   }
 
   return (
     <header className="sticky top-0 z-20 border-b-2 border-crimson bg-ink">
       <div className="flex w-full items-center justify-between px-6 py-3">
-        <Link to="/home" aria-label="Vai alla home" className="flex items-center">
+        <Link href="/home" aria-label="Vai alla home" className="flex items-center">
           <Logo src="/logo-header.svg" className="block h-11 w-auto md:h-14" />
         </Link>
 
@@ -63,7 +66,7 @@ export default function Header() {
                 {VOCI_MENU.map((voce) => (
                   <li key={voce.percorso}>
                     <Link
-                      to={voce.percorso}
+                      href={voce.percorso}
                       onClick={() => setAperto(false)}
                       className="block px-5 py-2.5 font-mono text-sm font-bold text-text transition hover:bg-brand/20 hover:text-white"
                     >

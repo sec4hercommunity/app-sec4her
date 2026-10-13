@@ -26,10 +26,22 @@ dove condividere. Nessuna deve più imparare da sola. Il sito è **la porta e la
 **Next.js (App Router) + TypeScript + Tailwind CSS + Supabase + Stripe + MDX + Vercel**
 (community su Discord + bot). Dettagli in `docs/architettura.md`.
 
-> ⚠️ Il codice attuale è ancora un prototipo **React 19 + Vite (JavaScript)** con Tailwind v4 e
-> React Router: pagine Accedi (`/accedi`), Registrati (`/registrati`) e Home riservata (`/home`).
-> Il login usa solo credenziali di test in `src/config/credenzialiTest.js` e la registrazione non salva
-> dati. Il nuovo lavoro deve andare verso lo stack ufficiale.
+Già in uso: **Next.js 16 (App Router) + TypeScript + Tailwind CSS v4** (tema in `app/globals.css` con `@theme`).
+Prima di scrivere codice Next.js leggi `AGENTS.md`: questa versione può differire da quella che conosci.
+
+Stato attuale: pagine Accedi (`/accedi`), Registrati (`/registrati`), Home riservata (`/home`) e pagine
+segnaposto del menu (`app/(riservata)/[sezione]`). Il login usa solo le credenziali di test in
+`config/credenzialiTest.ts`, con protezione solo lato browser (`app/(riservata)/layout.tsx`); la registrazione
+non salva dati. Entrambe le cose verranno sostituite da Supabase nella Fase 2.
+
+```
+app/          pagine (App Router); app/(riservata)/ = pagine che richiedono il login
+components/   AuthLayout, Campo, Pulsante, Header, Footer, Logo, Segnaposto
+auth/         AuthProvider + useAuth()
+config/       credenzialiTest.ts, sito.ts (voci menu e contatti)
+lib/          validazione.ts (regole dei campi, percorsoInterno contro gli open redirect)
+public/       loghi SVG
+```
 
 ## Sicurezza — priorità assoluta
 
@@ -56,13 +68,13 @@ Siamo un brand di cybersecurity: un breach sarebbe fatale per la credibilità.
 Titoli: font **monospace in grassetto** (`font-mono font-bold`), stile terminale/hacker.
 Layout moderno, centrato e responsive (deve funzionare anche da telefono).
 
-## Comandi (prototipo attuale)
+## Comandi
 
 ```bash
 npm install       # installa le dipendenze (la prima volta)
-npm run dev       # avvia l'app in sviluppo → http://localhost:5173
-npm run build     # build di produzione in dist/
-npm run preview   # anteprima della build
+npm run dev       # avvia l'app in sviluppo → http://localhost:3000
+npm run build     # build di produzione in .next/ (controlla anche i tipi TypeScript)
+npm run start     # avvia la build di produzione
 npm run lint      # controllo del codice (oxlint)
 ```
 

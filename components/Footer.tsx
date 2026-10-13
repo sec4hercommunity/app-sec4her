@@ -1,8 +1,8 @@
-import { Fragment } from 'react'
-import { CONTATTI } from '../config/sito.js'
+import { Fragment, type ReactNode } from 'react'
+import { CONTATTI, type Contatto } from '@/config/sito'
 
 // Piccole icone dei contatti; usano il colore del testo (currentColor).
-const ICONE = {
+const ICONE: Record<Contatto['icona'], ReactNode> = {
   email: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
       <rect x="3" y="5" width="18" height="14" rx="2" />

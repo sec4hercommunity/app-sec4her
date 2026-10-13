@@ -1,7 +1,10 @@
-import Logo from './Logo.jsx'
+import type { ReactNode } from 'react'
+import Logo from './Logo'
+
+type Props = { titolo: string; sottotitolo?: string; children: ReactNode }
 
 // Contenitore comune per le pagine di autenticazione: logo, titolo e card centrata.
-export default function AuthLayout({ titolo, sottotitolo, children }) {
+export default function AuthLayout({ titolo, sottotitolo, children }: Props) {
   return (
     <main className="flex min-h-svh items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
