@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from 'react'
 import { CONTATTI, type Contatto } from '@/config/sito'
+import IconaDiscord from './IconaDiscord'
 
 // Piccole icone dei contatti; usano il colore del testo (currentColor).
 const ICONE: Record<Contatto['icona'], ReactNode> = {
@@ -16,6 +17,7 @@ const ICONE: Record<Contatto['icona'], ReactNode> = {
       <circle cx="17.5" cy="6.5" r="0.75" fill="currentColor" />
     </svg>
   ),
+  discord: <IconaDiscord className="h-4 w-4" />,
 }
 
 export default function Footer() {

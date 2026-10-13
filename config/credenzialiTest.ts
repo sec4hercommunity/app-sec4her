@@ -11,3 +11,9 @@ export const CREDENZIALI_TEST = {
   email: 'test@sec4her.com',
   password: 'Test1234!',
 }
+
+// Profilo dell'utente di test (usato per precompilare i moduli, es. l'iscrizione agli eventi).
+export const PROFILO_TEST = {
+  nome: 'Test',
+  cognome: 'Sec4Her',
+}
