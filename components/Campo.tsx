@@ -1,5 +1,9 @@
+import type { InputHTMLAttributes } from 'react'
+
+type Props = InputHTMLAttributes<HTMLInputElement> & { id: string; etichetta: string; errore?: string }
+
 // Campo di input con etichetta e messaggio di errore accessibile.
-export default function Campo({ id, etichetta, errore, ...props }) {
+export default function Campo({ id, etichetta, errore, ...props }: Props) {
   const idErrore = `${id}-errore`
 
   return (

@@ -4,7 +4,7 @@
 // Il confronto avviene nel browser, quindi chiunque apra il sito può leggere questi valori:
 // NON usarle mai in produzione e NON metterci password vere.
 //
-// Da sostituire con un vero sistema di autenticazione (es. Supabase Auth), che controlla
+// Da sostituire con un vero sistema di autenticazione (Supabase Auth, Fase 2), che controlla
 // email e password sul server. Quando succederà, questo file andrà eliminato.
 
 export const CREDENZIALI_TEST = {

@@ -1,7 +1,11 @@
+'use client'
+
 import { useState } from 'react'
 
+type Props = { src?: string; className?: string; classeTesto?: string }
+
 // Logo (di default public/logo.svg); se l'immagine manca mostra la scritta "sec4her".
-export default function Logo({ src = '/logo.svg', className = 'h-10 w-auto', classeTesto = 'text-xl' }) {
+export default function Logo({ src = '/logo.svg', className = 'h-10 w-auto', classeTesto = 'text-xl' }: Props) {
   const [mancante, setMancante] = useState(false)
 
   if (mancante) {

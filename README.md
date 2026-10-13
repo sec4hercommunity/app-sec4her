@@ -42,14 +42,15 @@ Questo repository contiene la **web app** di Sec4Her. Oggi l'app ha:
 
 | Tecnologia | Versione | A cosa serve |
 | --- | --- | --- |
+| [Next.js](https://nextjs.org) (App Router) | 16 | Il framework del sito: ogni cartella dentro `app/` è un indirizzo (`app/accedi/` → `/accedi`). Avvia l'app in locale, la ricarica a ogni salvataggio e crea la versione da pubblicare (su Vercel). |
 | [React](https://react.dev) | 19 | Libreria per costruire l'interfaccia a "componenti" (pezzi riutilizzabili come campi, pulsanti, header). |
-| [Vite](https://vite.dev) | 8 | Avvia l'app in locale in un attimo e la ricarica a ogni salvataggio; crea anche la versione finale da pubblicare. |
+| [TypeScript](https://www.typescriptlang.org) | 7 | JavaScript con i **tipi**: segnala molti errori prima ancora di aprire il browser. |
 | [Tailwind CSS](https://tailwindcss.com) | 4 | Permette di dare lo stile scrivendo classi direttamente nell'HTML (es. `bg-brand`, `font-mono`). |
-| [React Router](https://reactrouter.com) | 7 | Gestisce gli indirizzi delle pagine (`/accedi`, `/home`, …), il passaggio tra loro e le pagine protette. |
 | [oxlint](https://oxc.rs) | 1 | Controlla il codice e segnala errori comuni (comando `npm run lint`). |
 
-Il codice è scritto in **JavaScript** (file `.jsx` per i componenti React). Non ci sono database né server: per
-ora tutto gira nel browser.
+È lo **stack ufficiale** del progetto (vedi `docs/architettura.md`); più avanti si aggiungeranno Supabase, Stripe
+e MDX. Il codice è scritto in **TypeScript** (file `.ts`, e `.tsx` per i componenti React). Per ora non ci sono
+database: il login di test gira tutto nel browser.
 
 ---
 
@@ -58,7 +59,7 @@ ora tutto gira nel browser.
 Prima di iniziare installa sul computer:
 
 - **[Git](https://git-scm.com/download/win)** – per scaricare il codice e salvare le modifiche.
-- **[Node.js](https://nodejs.org)** – versione **20.19 o superiore** (oppure **22.12 o superiore**), richiesta da Vite 8.
+- **[Node.js](https://nodejs.org)** – versione **20.9 o superiore**, richiesta da Next.js 16.
   Consigliata l'ultima versione **LTS**. Insieme a Node viene installato anche **npm**.
 - **[Visual Studio Code](https://code.visualstudio.com)** *(consigliato)* – l'editor per aprire e modificare il codice.
 
@@ -108,7 +109,7 @@ npm run dev
 
 **5. Apri il browser** all'indirizzo:
 
-👉 **http://localhost:5173**
+👉 **http://localhost:3000**
 
 Verrai portata automaticamente alla pagina **Accedi**. Entra con le credenziali di test (vedi
 [sezione 6](#6-login-di-test-pagine-protette-ed-esci)). Ogni volta che salvi un file, la pagina si aggiorna da sola.
@@ -121,13 +122,13 @@ Si trovano nella sezione `scripts` di `package.json`:
 
 | Comando | Cosa fa |
 | --- | --- |
-| `npm run dev` | Avvia l'app in modalità sviluppo su http://localhost:5173. |
-| `npm run build` | Crea la versione ottimizzata da pubblicare, nella cartella `dist/`. |
-| `npm run preview` | Mostra nel browser la versione creata con `build`, per controllarla prima di pubblicarla. |
+| `npm run dev` | Avvia l'app in modalità sviluppo su http://localhost:3000. |
+| `npm run build` | Crea la versione ottimizzata da pubblicare (cartella `.next/`) e controlla i tipi TypeScript. |
+| `npm run start` | Avvia la versione creata con `build`, per controllarla prima di pubblicarla. |
 | `npm run lint` | Controlla il codice con oxlint e segnala eventuali errori. |
 
-> 💡 Vuoi provare l'app dal telefono? Avvia con `npm run dev -- --host`: nel terminale comparirà un indirizzo
-> "Network" (es. `http://192.168.x.x:5173`) da aprire sul telefono collegato alla **stessa rete Wi-Fi**.
+> 💡 Vuoi provare l'app dal telefono? Con `npm run dev` nel terminale compare anche un indirizzo
+> "Network" (es. `http://192.168.x.x:3000`) da aprire sul telefono collegato alla **stessa rete Wi-Fi**.
 
 ---
 
@@ -140,39 +141,42 @@ app-sec4her/
 │   ├── logo.svg                Logo completo originale (Accedi e Registrati)
 │   ├── logo-header.svg         Logo ritagliato per l'header: solo "sec", linea cremisi e "4her"
 │   └── logo-home.svg           Logo completo ritagliato, senza spazio vuoto (parte centrale della Home)
-├── src/                        Tutto il codice dell'app
-│   ├── main.jsx                Punto di partenza: carica gli stili e "monta" l'app nella pagina
-│   ├── App.jsx                 Elenco delle pagine (rotte), quali sono protette e i loro indirizzi
-│   ├── index.css               Importa Tailwind e definisce colori e font del brand
-│   ├── pages/                  Le pagine complete
-│   │   ├── Accedi.jsx          Pagina di accesso (/accedi)
-│   │   ├── Registrati.jsx      Pagina di registrazione (/registrati)
-│   │   ├── Home.jsx            Home riservata (/home): logo grande e presentazione dell'Academy
-│   │   └── Segnaposto.jsx      Pagina provvisoria usata per tutte le voci del menu
-│   ├── components/             Pezzi riutilizzati dalle pagine
-│   │   ├── AuthLayout.jsx      Cornice di Accedi/Registrati: logo, slogan, card centrata
-│   │   ├── Campo.jsx           Campo di testo con etichetta e messaggio di errore
-│   │   ├── Pulsante.jsx        Pulsante viola principale
-│   │   ├── Logo.jsx            Mostra un logo; se l'immagine manca mostra la scritta "sec4her"
-│   │   ├── LayoutSito.jsx      Struttura delle pagine riservate: header + contenuto bianco + footer
-│   │   ├── Header.jsx          Barra in alto: logo a sinistra, menu ☰ a destra (con "Esci")
-│   │   ├── Footer.jsx          Barra in basso: Contatti (Email · Instagram), slogan, copyright
-│   │   └── RottaProtetta.jsx   Blocca le pagine riservate a chi non ha fatto il login
-│   ├── auth/
-│   │   ├── AuthProvider.jsx    Stato del login: accedi, esci, utente collegata
-│   │   └── contesto.js         Hook useAuth() per leggere lo stato del login da qualsiasi pagina
-│   ├── config/
-│   │   ├── credenzialiTest.js  ⚠️ Email e password di TEST (solo sviluppo)
-│   │   └── sito.js             Voci del menu e contatti del footer (facili da modificare)
-│   └── lib/
-│       └── validazione.js      Regole di controllo dei campi e testi degli errori
-├── index.html                  Pagina HTML di base (lingua, titolo, favicon)
-├── vite.config.js              Configurazione di Vite (plugin React e Tailwind)
+├── app/                        Le pagine: ogni cartella è un indirizzo (App Router di Next.js)
+│   ├── layout.tsx              Cornice di tutto il sito: lingua, titolo, favicon, stili e stato del login
+│   ├── globals.css             Importa Tailwind e definisce colori e font del brand
+│   ├── page.tsx                /  → manda su /accedi
+│   ├── not-found.tsx           Indirizzi che non esistono → manda su /accedi
+│   ├── accedi/page.tsx         Pagina di accesso (/accedi)
+│   ├── registrati/page.tsx     Pagina di registrazione (/registrati)
+│   └── (riservata)/            Pagine che richiedono il login (le parentesi non finiscono nell'indirizzo)
+│       ├── layout.tsx          Protezione + struttura: header, contenuto bianco, footer
+│       ├── home/page.tsx       Home riservata (/home): logo grande e presentazione dell'Academy
+│       └── [sezione]/page.tsx  Pagina segnaposto per ogni voce del menu (/about, /lezioni, …)
+├── components/                 Pezzi riutilizzati dalle pagine
+│   ├── AuthLayout.tsx          Cornice di Accedi/Registrati: logo, slogan, card centrata
+│   ├── Campo.tsx               Campo di testo con etichetta e messaggio di errore
+│   ├── Pulsante.tsx            Pulsante viola principale
+│   ├── Logo.tsx                Mostra un logo; se l'immagine manca mostra la scritta "sec4her"
+│   ├── Header.tsx              Barra in alto: logo a sinistra, menu ☰ a destra (con "Esci")
+│   ├── Footer.tsx              Barra in basso: Contatti (Email · Instagram), slogan, copyright
+│   └── Segnaposto.tsx          Contenuto provvisorio delle pagine del menu
+├── auth/
+│   ├── AuthProvider.tsx        Stato del login: accedi, esci, utente collegata
+│   └── contesto.ts             Hook useAuth() per leggere lo stato del login da qualsiasi pagina
+├── config/
+│   ├── credenzialiTest.ts      ⚠️ Email e password di TEST (solo sviluppo)
+│   └── sito.ts                 Voci del menu e contatti del footer (facili da modificare)
+├── lib/
+│   └── validazione.ts          Regole di controllo dei campi, testi degli errori, controllo dei redirect
+├── next.config.ts              Configurazione di Next.js
+├── postcss.config.mjs          Collega Tailwind a Next.js
+├── tsconfig.json               Configurazione di TypeScript (es. `@/` = cartella principale negli import)
 ├── package.json                Nome del progetto, comandi e librerie usate
 ├── package-lock.json           Versioni esatte delle librerie installate (non modificarlo a mano)
 ├── .oxlintrc.json              Regole del controllo del codice (oxlint)
-├── .gitignore                  File che Git deve ignorare (node_modules, dist, .env.local, prompt.txt, tmpapp/)
+├── .gitignore                  File che Git deve ignorare (node_modules, .next, .env.local, prompt.txt, tmpapp/)
 ├── CLAUDE.md                   Istruzioni per Claude Code: progetto, colori, comandi, regole
+├── AGENTS.md                   Note per gli assistenti AI, generate da Next.js (si ricrea con `npm run dev`)
 └── docs/
     ├── architettura.md                 Architettura della piattaforma (versione Markdown del PDF)
     ├── struttura-corsi.md              Struttura del percorso formativo (versione Markdown del PDF)
@@ -188,23 +192,22 @@ app-sec4her/
 
 | File | Ruolo |
 | --- | --- |
-| `src/pages/Accedi.jsx` | Pagina **Accedi**: campi email e password. |
-| `src/pages/Registrati.jsx` | Pagina **Registrati**: campi nome, email, password e conferma password. |
-| `src/components/AuthLayout.jsx` | Cornice uguale per entrambe le pagine (logo, slogan con cursore lampeggiante, card). |
-| `src/components/Campo.jsx` | Il singolo campo con etichetta e, se serve, il messaggio di errore. |
-| `src/components/Pulsante.jsx` | Il pulsante viola ("Accedi" / "Crea account"). |
-| `src/lib/validazione.js` | Le regole di controllo dei campi, usate da entrambe le pagine. |
+| `app/accedi/page.tsx` | Pagina **Accedi**: campi email e password. |
+| `app/registrati/page.tsx` | Pagina **Registrati**: campi nome, email, password e conferma password. |
+| `components/AuthLayout.tsx` | Cornice uguale per entrambe le pagine (logo, slogan con cursore lampeggiante, card). |
+| `components/Campo.tsx` | Il singolo campo con etichetta e, se serve, il messaggio di errore. |
+| `components/Pulsante.tsx` | Il pulsante viola ("Accedi" / "Crea account"). |
+| `lib/validazione.ts` | Le regole di controllo dei campi, usate da entrambe le pagine. |
 
 ### Come si passa da Accedi a Registrati
 
-Gli indirizzi sono definiti in `src/App.jsx` con **React Router**:
+Con Next.js gli indirizzi **sono le cartelle** dentro `app/`: non c'è un elenco di rotte da tenere aggiornato.
 
-```jsx
-<Route path="/" element={<Navigate to="/accedi" replace />} />
-<Route path="/accedi" element={<Accedi />} />
-<Route path="/registrati" element={<Registrati />} />
-{/* ...pagine protette (sezione 6)... */}
-<Route path="*" element={<Navigate to="/accedi" replace />} />
+```
+app/page.tsx              →  /            (manda su /accedi)
+app/accedi/page.tsx       →  /accedi
+app/registrati/page.tsx   →  /registrati
+app/not-found.tsx         →  qualsiasi indirizzo che non esiste (manda su /accedi)
 ```
 
 - Aprendo `/` (o un indirizzo che non esiste) si viene mandate su **`/accedi`**.
@@ -213,13 +216,13 @@ Gli indirizzi sono definiti in `src/App.jsx` con **React Router**:
 
 ### Quali controlli vengono fatti sui campi
 
-I controlli sono in `src/lib/validazione.js`. Ogni funzione restituisce il **testo dell'errore**, oppure una
+I controlli sono in `lib/validazione.ts`. Ogni funzione restituisce il **testo dell'errore**, oppure una
 stringa vuota se il campo è corretto:
 
-```js
+```ts
 export const PASSWORD_MIN = 8
 
-export function validaPassword(password) {
+export function validaPassword(password: string): string {
   if (!password) return 'Inserisci la password.'
   if (password.length < PASSWORD_MIN) return `La password deve contenere almeno ${PASSWORD_MIN} caratteri.`
   return ''
@@ -246,12 +249,11 @@ export function validaPassword(password) {
 ### Cosa succede quando si clicca il pulsante
 
 **"Accedi"**: dopo i controlli sui campi, email e password vengono confrontate con le **credenziali di test**
-(sezione 6). Se coincidono si arriva su **`/home`**; altrimenti sopra il form compare il riquadro cremisi
-**"[errore] Email o password non corretti"**.
+(sezione 6). Se coincidono si arriva su **`/home`** (o sulla pagina riservata che si era chiesta); altrimenti
+sopra il form compare il riquadro cremisi **"[errore] Email o password non corretti"**.
 
-```jsx
-if (accedi(valori.email, valori.password)) navigate(destinazione, { replace: true })
-else setErroreLogin('Email o password non corretti')
+```tsx
+if (!accedi(valori.email, valori.password)) setErroreLogin('Email o password non corretti')
 ```
 
 **"Crea account"**: se tutti i campi sono corretti, il form viene sostituito da una schermata di conferma
@@ -271,12 +273,12 @@ else setErroreLogin('Email o password non corretti')
 | Email | `test@sec4her.com` |
 | Password | `Test1234!` |
 
-Si trovano in **`src/config/credenzialiTest.js`**, un file separato con un avviso ben visibile:
+Si trovano in **`config/credenzialiTest.ts`**, un file separato con un avviso ben visibile:
 
-```js
+```ts
 // ⚠️  CREDENZIALI SOLO DI TEST — USARE ESCLUSIVAMENTE IN SVILUPPO  ⚠️
 // ...
-// Da sostituire con un vero sistema di autenticazione (es. Supabase Auth), che controlla
+// Da sostituire con un vero sistema di autenticazione (Supabase Auth, Fase 2), che controlla
 // email e password sul server. Quando succederà, questo file andrà eliminato.
 export const CREDENZIALI_TEST = {
   email: 'test@sec4her.com',
@@ -287,7 +289,7 @@ export const CREDENZIALI_TEST = {
 > ⚠️ Il confronto avviene **nel browser**: chiunque apra il sito può leggere questi valori. Vanno bene solo per
 > provare l'app in locale, **mai in produzione**.
 
-Come funziona il login di test (`src/auth/AuthProvider.jsx`):
+Come funziona il login di test (`auth/AuthProvider.tsx`):
 
 - L'email viene confrontata senza badare a maiuscole/minuscole e spazi; la password deve essere **identica**.
 - Il login viene ricordato nella `sessionStorage` del browser: se ricarichi la pagina resti dentro, se chiudi la
@@ -296,21 +298,26 @@ Come funziona il login di test (`src/auth/AuthProvider.jsx`):
 
 ### Pagine protette
 
-`/home` e tutte le pagine del menu sono dentro `RottaProtetta` in `src/App.jsx`:
+`/home` e tutte le pagine del menu sono nella cartella **`app/(riservata)/`**. Il suo `layout.tsx` controlla il
+login prima di mostrare qualsiasi cosa:
 
-```jsx
-<Route element={<RottaProtetta />}>
-  <Route element={<LayoutSito />}>
-    <Route path="/home" element={<Home />} />
-    {VOCI_MENU.map((voce) => (
-      <Route key={voce.percorso} path={voce.percorso} element={<Segnaposto titolo={voce.titolo} />} />
-    ))}
-  </Route>
-</Route>
+```tsx
+useEffect(() => {
+  if (utente !== null) return
+  router.replace(uscitaVolontaria() ? '/accedi' : `/accedi?da=${encodeURIComponent(percorso)}`)
+}, [utente, uscitaVolontaria, router, percorso])
+
+// Finché la sessione non è letta (o se manca il login) non mostra nulla del contenuto riservato.
+if (!utente) return null
 ```
 
-Se provi ad aprire una di queste pagine **senza aver fatto il login**, vieni mandata su **Accedi**; dopo il login
-torni automaticamente alla pagina che avevi chiesto.
+Se provi ad aprire una di queste pagine **senza aver fatto il login**, vieni mandata su **Accedi** (es.
+`/accedi?da=/eventi`); dopo il login torni automaticamente alla pagina che avevi chiesto. Il parametro `da` accetta
+solo indirizzi interni al sito (`percorsoInterno` in `lib/validazione.ts`): un link come
+`/accedi?da=//sito-esterno.com` porta comunque su `/home` (protezione dall'*open redirect*).
+
+> ⚠️ Per ora la protezione è solo **nel browser**, perché anche il login di test vive lì. Con Supabase (Fase 2)
+> il controllo andrà fatto **sul server**.
 
 ### Il pulsante Esci
 
@@ -321,10 +328,10 @@ non è più raggiungibile finché non si rientra.
 
 ## 7. La pagina Home
 
-Ogni pagina riservata (Home e pagine del menu) ha tre parti, definite in `src/components/LayoutSito.jsx`:
+Ogni pagina riservata (Home e pagine del menu) ha tre parti, definite in `app/(riservata)/layout.tsx`:
 **header** scuro, **parte centrale bianca**, **footer** scuro.
 
-### Header (`Header.jsx`)
+### Header (`Header.tsx`)
 
 - Occupa **tutta la larghezza** dello schermo, sfondo `#0B0B12`, linea cremisi sotto, resta fisso in alto
   mentre si scorre.
@@ -334,8 +341,8 @@ Ogni pagina riservata (Home e pagine del menu) ha tre parti, definite in `src/co
 
 ### Il menu ☰
 
-Le voci sono definite in **`src/config/sito.js`** (per aggiungerne una basta aggiungere una riga) e ognuna porta
-a una **pagina segnaposto** (`Segnaposto.jsx`) con lo stesso header e footer, il titolo della sezione e la scritta
+Le voci sono definite in **`config/sito.ts`** (per aggiungerne una basta aggiungere una riga) e ognuna porta
+a una **pagina segnaposto** (`app/(riservata)/[sezione]/page.tsx`, che usa `components/Segnaposto.tsx`) con lo stesso header e footer, il titolo della sezione e la scritta
 *"[in costruzione] Questa sezione arriverà presto."*
 
 | Voce | Indirizzo |
@@ -351,7 +358,7 @@ a una **pagina segnaposto** (`Segnaposto.jsx`) con lo stesso header e footer, il
 
 Il menu si chiude: cliccando una voce, cliccando fuori dal menu, premendo di nuovo l'icona oppure premendo **Esc**.
 
-### Parte centrale (`Home.jsx`)
+### Parte centrale (`app/(riservata)/home/page.tsx`)
 
 - Sfondo **bianco**, sezione centrata in verticale.
 - Il **logo completo** (`logo-home.svg`, con "HACK THE FUTURE") dentro un riquadro scuro con angoli
@@ -359,10 +366,10 @@ Il menu si chiude: cliccando una voce, cliccando fuori dal menu, premendo di nuo
 - Accanto, il **paragrafo di presentazione** dell'Academy in grigio scuro `#1A1A24`.
 - Su computer logo a sinistra e testo a destra; su telefono logo sopra e testo sotto.
 
-Il testo è nella costante `DESCRIZIONE` in cima a `src/pages/Home.jsx`: è un **testo segnaposto**, da modificare
+Il testo è nella costante `DESCRIZIONE` in cima a `app/(riservata)/home/page.tsx`: è un **testo segnaposto**, da modificare
 liberamente.
 
-### Footer (`Footer.jsx`)
+### Footer (`Footer.tsx`)
 
 Compatto, tutto centrato, sfondo `#0B0B12` con una sottile linea cremisi in alto:
 
@@ -371,7 +378,7 @@ Compatto, tutto centrato, sfondo `#0B0B12` con una sottile linea cremisi in alto
 2. **`> HACK THE FUTURE_`** in verde.
 3. **"© 2026 Sec4Her"** in piccolo.
 
-I contatti sono nella lista `CONTATTI` in **`src/config/sito.js`**. Sono **valori segnaposto**
+I contatti sono nella lista `CONTATTI` in **`config/sito.ts`**. Sono **valori segnaposto**
 (`info@sec4her.it`, `@sec4her`): sostituiscili con quelli reali prima di pubblicare il sito.
 
 ---
@@ -389,10 +396,10 @@ Tutti i loghi sono in `public/` e sono file **SVG** (immagini vettoriali: restan
 Il logo originale ha molto spazio vuoto intorno alla scritta: da piccolo (nell'header) diventava illeggibile,
 per questo esistono le versioni ritagliate.
 
-Tutte le immagini passano dal componente `src/components/Logo.jsx`, che sceglie il file con la proprietà `src`
+Tutte le immagini passano dal componente `components/Logo.tsx`, che sceglie il file con la proprietà `src`
 e, se l'immagine non si carica, mostra al suo posto la scritta **sec4her**:
 
-```jsx
+```tsx
 <Logo src="/logo-header.svg" className="block h-11 w-auto md:h-14" />
 ```
 
@@ -403,7 +410,7 @@ e, se l'immagine non si carica, mostra al suo posto la scritta **sec4her**:
 
 ## 9. Stile e colori del brand
 
-I colori sono definiti una sola volta in `src/index.css` e si usano come classi Tailwind:
+I colori sono definiti una sola volta in `app/globals.css` e si usano come classi Tailwind:
 
 ```css
 @theme {
@@ -440,9 +447,9 @@ Altri dettagli:
 
 ## 10. Come testare
 
-Avvia l'app con `npm run dev` e apri http://localhost:5173.
+Avvia l'app con `npm run dev` e apri http://localhost:3000.
 
-**Registrazione** (http://localhost:5173/registrati)
+**Registrazione** (http://localhost:3000/registrati)
 
 - [ ] **Campi vuoti** – premi "Crea account" senza scrivere nulla → compaiono 4 errori, uno sotto ogni campo.
 - [ ] **Nome troppo corto** – una sola lettera → *"Il nome deve contenere almeno 2 caratteri."*
@@ -452,17 +459,17 @@ Avvia l'app con `npm run dev` e apri http://localhost:5173.
 - [ ] **L'errore sparisce** – ricomincia a scrivere in un campo con errore → il messaggio scompare.
 - [ ] **Registrazione corretta** – tutto compilato bene → *"Registrazione completata"* con il tuo nome.
 
-**Login** (http://localhost:5173/accedi)
+**Login** (http://localhost:3000/accedi)
 
 - [ ] **Campi vuoti** – premi "Accedi" → errori su email e password.
 - [ ] **Credenziali sbagliate** – `prova@sec4her.com` / `Password1` → *"[errore] Email o password non corretti"*.
 - [ ] **Credenziali di test** – `test@sec4her.com` / `Test1234!` → arrivi su `/home`.
 - [ ] **Link** – "Registrati" e "Accedi" portano da una pagina all'altra.
-- [ ] **Indirizzo sbagliato** – http://localhost:5173/pagina-che-non-esiste → vieni riportata su Accedi.
+- [ ] **Indirizzo sbagliato** – http://localhost:3000/pagina-che-non-esiste → vieni riportata su Accedi.
 
 **Pagine protette ed Esci**
 
-- [ ] **Senza login** – in una finestra in incognito apri http://localhost:5173/home → vieni portata su Accedi;
+- [ ] **Senza login** – in una finestra in incognito apri http://localhost:3000/home → vieni portata su Accedi;
       dopo il login torni su `/home`.
 - [ ] **Ricarica** – premi F5 su `/home` → resti dentro.
 - [ ] **Esci** – dal menu premi "Esci" → torni su Accedi; riaprendo `/home` vieni rimandata ad Accedi.
@@ -557,7 +564,15 @@ Branch `home` (contiene anche tutto il lavoro di `login`):
 5. **Loghi ritagliati** – `logo-header.svg` leggibile nell'header e `logo-home.svg` senza spazio vuoto per la home.
 6. **Footer compatto** – solo Email e Instagram con icone su una riga, slogan e copyright centrati.
 7. **Titolo "Contatti"** – rimesso davanti ai contatti, sulla stessa riga.
-8. **README aggiornato** – questa versione; `prompt.txt` e `tmpapp/` aggiunti a `.gitignore`.
+8. **README aggiornato** – `prompt.txt` e `tmpapp/` aggiunti a `.gitignore`.
+9. **Documentazione** – PDF spostati in `docs/` con la versione Markdown; `CLAUDE.md` con missione, stack,
+   regole di sicurezza e piano a fasi.
+
+Branch `migrazione-nextjs` (parte da `home`):
+
+10. **Migrazione a Next.js + TypeScript** – da React + Vite + React Router a Next.js (App Router) + TypeScript,
+    con aspetto e comportamento identici. Unica differenza: la pagina da cui si arriva su Accedi è nell'indirizzo
+    (`?da=/eventi`) e accetta solo percorsi interni. Rimossi `index.html`, `vite.config.js` e `src/`.
 
 ---
 
@@ -566,14 +581,15 @@ Branch `home` (contiene anche tutto il lavoro di `login`):
 - **Database vero per gli account**, ad esempio **Supabase** (quello previsto nel documento di architettura:
   database PostgreSQL con login già pronto) oppure **Firebase**: registrazione che salva davvero e login vero.
   Le password non vanno mai salvate a mano: ci pensa il servizio di autenticazione.
-- **Eliminare le credenziali di test** (`src/config/credenzialiTest.js`) appena il login vero funziona.
+- **Eliminare le credenziali di test** (`config/credenzialiTest.ts`) appena il login vero funziona.
 - **Contenuti reali delle pagine del menu**: About us, Lezioni, Eventi, Meeting, CTF Groups, Bug Bounty Group,
   Contact us (oggi sono segnaposto).
-- **Contatti reali** nel footer (`src/config/sito.js`) e **testo definitivo** della presentazione in Home.
+- **Contatti reali** nel footer (`config/sito.ts`) e **testo definitivo** della presentazione in Home.
 - **Recupero password** ("Password dimenticata?"), oggi non presente.
 - **Controlli lato server**: con un database, i controlli sui campi andranno ripetuti anche lì, perché quelli nel
   browser si possono aggirare.
-- **Test automatici** per le regole di `validazione.js` e per il login: oggi si prova tutto a mano.
+- **Test automatici** per le regole di `validazione.ts` e per il login: oggi si prova tutto a mano.
 - **Unire i branch su `main`** tramite pull request (prima `login`, poi `home`).
+- **Protezione delle pagine sul server** (middleware di Next.js) quando arriva Supabase.
 - Le altre parti previste nei PDF del progetto: **landing page pubblica**, **note e lezioni** in MDX,
   **membership** con Stripe e collegamento a **Discord**.

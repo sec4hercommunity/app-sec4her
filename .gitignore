@@ -26,3 +26,9 @@ dist-ssr
 # File di lavoro locali (non vanno su GitHub)
 prompt.txt
 tmpapp/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
