@@ -15,8 +15,8 @@ Questo repository contiene la **web app** di Sec4Her. Oggi l'app ha:
 - una **Home riservata** (`/home`) con header, menu ☰, presentazione dell'Academy e footer;
 - la sezione **CTF Groups** (`/ctf`): lista dei CTF, aggiunta di un CTF e gruppi per partecipare insieme
   (con **dati finti** per ora);
-- la pagina **Eventi** (`/eventi`) con iscrizione agli eventi e la scheda **Parla con noi** per prenotare una call
-  su Cal.com (con **dati finti** per ora);
+- la pagina **Eventi** (`/eventi`) con iscrizione agli eventi e la pagina **Meeting** (`/meeting`) per prenotare
+  una call con noi su Cal.com (con **dati finti** per ora);
 - una **pagina segnaposto** per le altre voci del menu.
 
 > ⚠️ Il login funziona solo con delle **credenziali di test** e la registrazione **non salva dati**: il
@@ -34,7 +34,7 @@ Questo repository contiene la **web app** di Sec4Her. Oggi l'app ha:
 6. [Login di test, pagine protette ed Esci](#6-login-di-test-pagine-protette-ed-esci)
 7. [La pagina Home](#7-la-pagina-home)
 8. [CTF Groups](#8-ctf-groups)
-9. [Eventi e Parla con noi](#9-eventi-e-parla-con-noi)
+9. [Eventi e Meeting](#9-eventi-e-meeting)
 10. [I loghi](#10-i-loghi)
 11. [Stile e colori del brand](#11-stile-e-colori-del-brand)
 12. [Come testare](#12-come-testare)
@@ -161,9 +161,12 @@ app-sec4her/
 │       │   ├── layout.tsx      Stato condiviso dei CTF + sfondo scuro
 │       │   ├── page.tsx        Lista dei CTF (/ctf)
 │       │   └── [id]/page.tsx   Dettaglio di un CTF con i gruppi (/ctf/ctf-hunter, …)
-│       ├── eventi/             Eventi e Parla con noi (sezione 9)
+│       ├── eventi/             Eventi (sezione 9)
 │       │   ├── layout.tsx      Sfondo scuro
-│       │   └── page.tsx        Le due schede: Eventi e Parla con noi (/eventi)
+│       │   └── page.tsx        Evento del mese, prossimi eventi, eventi passati (/eventi)
+│       ├── meeting/            Meeting (sezione 9)
+│       │   ├── layout.tsx      Sfondo scuro
+│       │   └── page.tsx        Team e tipi di call da prenotare su Cal.com (/meeting)
 │       └── [sezione]/page.tsx  Pagina segnaposto per le altre voci del menu (/about, /lezioni, …)
 ├── components/                 Pezzi riutilizzati dalle pagine
 │   ├── AuthLayout.tsx          Cornice di Accedi/Registrati: logo, slogan, card centrata
@@ -172,10 +175,12 @@ app-sec4her/
 │   ├── Logo.tsx                Mostra un logo; se l'immagine manca mostra la scritta "sec4her"
 │   ├── Header.tsx              Barra in alto: logo a sinistra, menu ☰ a destra (con "Esci")
 │   ├── Footer.tsx              Barra in basso: Contatti (Email · Instagram · Discord), slogan, copyright
-│   ├── IconaDiscord.tsx        Logo di Discord (footer e pagina Eventi)
+│   ├── IconaDiscord.tsx        Logo di Discord (footer, Eventi, Meeting)
+│   ├── RiquadroDiscord.tsx     Riquadro "Unisciti alla community" (in fondo a Eventi e Meeting)
 │   ├── Segnaposto.tsx          Contenuto provvisorio delle pagine del menu
 │   ├── ctf/                    Pezzi della sezione CTF Groups (card, modali, badge, avatar…)
-│   └── eventi/                 Pezzi della pagina Eventi (card, modale iscrizione, Parla con noi, Discord…)
+│   ├── eventi/                 Pezzi della pagina Eventi (card, modale iscrizione, badge, icone…)
+│   └── meeting/                Pezzi della pagina Meeting (card del team e dei tipi di call)
 ├── auth/
 │   ├── AuthProvider.tsx        Stato del login: accedi, esci, utente collegata
 │   └── contesto.ts             Hook useAuth() per leggere lo stato del login da qualsiasi pagina
@@ -186,11 +191,13 @@ app-sec4her/
 │   └── ctf.ts                  Limiti dei CTF Groups (max gruppi, max membri) e opzioni dei moduli
 ├── data/
 │   ├── ctf-mock.ts             ⚠️ Dati FINTI dei CTF e dei gruppi (da sostituire con Supabase)
-│   └── eventi-mock.ts          ⚠️ Dati FINTI di eventi, team e tipi di call (da sostituire con Supabase)
+│   ├── eventi-mock.ts          ⚠️ Dati FINTI degli eventi (da sostituire con Supabase)
+│   └── meeting-mock.ts         ⚠️ Dati FINTI di team e tipi di call (da sostituire con Supabase)
 ├── lib/
 │   ├── validazione.ts          Regole di controllo dei campi, testi degli errori, controllo dei redirect
 │   ├── ctf.ts                  Tipi e regole dei CTF: stato, conto alla rovescia, controlli dei moduli
-│   ├── eventi.ts               Tipi e regole degli eventi: temi, posti, conto alla rovescia, controlli
+│   ├── eventi.ts               Tipi e regole degli eventi: temi, piattaforme, posti, conto alla rovescia, controlli
+│   ├── meeting.ts              Tipi della pagina Meeting (persona del team, tipo di call)
 │   └── ics.ts                  Crea il file .ics "Aggiungi al calendario" direttamente nel browser
 ├── next.config.ts              Configurazione di Next.js
 ├── postcss.config.mjs          Collega Tailwind a Next.js
@@ -365,8 +372,8 @@ Ogni pagina riservata (Home e pagine del menu) ha tre parti, definite in `app/(r
 
 ### Il menu ☰
 
-Le voci sono definite in **`config/sito.ts`** (per aggiungerne una basta aggiungere una riga). **Eventi** e
-**CTF Groups** hanno la loro pagina vera (sezioni 9 e 8); le altre portano a una **pagina segnaposto** (`app/(riservata)/[sezione]/page.tsx`, che usa `components/Segnaposto.tsx`) con lo stesso header e footer, il titolo della sezione e la scritta
+Le voci sono definite in **`config/sito.ts`** (per aggiungerne una basta aggiungere una riga). **Eventi**,
+**Meeting** e **CTF Groups** hanno la loro pagina vera (sezioni 9 e 8); le altre portano a una **pagina segnaposto** (`app/(riservata)/[sezione]/page.tsx`, che usa `components/Segnaposto.tsx`) con lo stesso header e footer, il titolo della sezione e la scritta
 *"[in costruzione] Questa sezione arriverà presto."*
 
 | Voce | Indirizzo |
@@ -374,7 +381,7 @@ Le voci sono definite in **`config/sito.ts`** (per aggiungerne una basta aggiung
 | About us | `/about` |
 | Lezioni | `/lezioni` |
 | Eventi | `/eventi` (pagina vera, sezione 9) |
-| Meeting | `/meeting` |
+| Meeting | `/meeting` (pagina vera, sezione 9) |
 | CTF Groups | `/ctf` (pagina vera, sezione 8) |
 | Bug Bounty Group | `/bug-bounty` |
 | Contact us | `/contatti` |
@@ -499,21 +506,22 @@ modali che compaiono in **dissolvenza**. Solo i colori del brand. Su telefono le
 
 ---
 
-## 9. Eventi e Parla con noi
+## 9. Eventi e Meeting
 
 **Il principio:** il sito **non costruisce strumenti**. Raccoglie le persone appassionate di sicurezza e le porta
 su strumenti che esistono già: **Cal.com** per le prenotazioni, **Zoom / Google Meet / Discord** per le call,
 **Discord** per la community e la chat.
 
-> ⚠️ **Per ora è solo la parte grafica, con dati finti.** Gli eventi, il team e i tipi di call sono in
-> **`data/eventi-mock.ts`**; le iscrizioni restano nella memoria del browser e **ricaricando la pagina
-> spariscono**. Quando collegheremo Supabase basterà sostituire quel file (e le funzioni di
-> `components/eventi/useEventi.ts` che modificano i dati) con la lettura e la scrittura sul database.
+> ⚠️ **Per ora è solo la parte grafica, con dati finti.** Gli eventi sono in **`data/eventi-mock.ts`**, il team e i
+> tipi di call in **`data/meeting-mock.ts`**. Le iscrizioni restano nella memoria del browser e **ricaricando la
+> pagina spariscono**. I link esterni sono **segnaposto** in **`config/links.ts`**.
 
-La pagina `/eventi` ha due **schede** in alto: **Eventi** e **Parla con noi** (si cambia anche con le frecce ← →).
-Sotto le schede c'è sempre il riquadro **"Unisciti alla community"** con il pulsante **"Entra su Discord ↗"**.
+In fondo a entrambe le pagine c'è il riquadro **"Unisciti alla community"** (*"Su Discord parliamo, ci aiutiamo e
+organizziamo i gruppi. Nessuna resta sola."*) con il pulsante **"Entra su Discord ↗"**
+(`components/RiquadroDiscord.tsx`, lo stesso componente nelle due pagine). L'icona Discord è anche nel footer,
+accanto a Email e Instagram.
 
-### Scheda "Eventi"
+### Pagina Eventi (`/eventi`)
 
 - **Evento del mese** in alto: card grande con titolo, tema, data e ora, durata, modalità, descrizione,
   **cosa portare**, luogo e **posti** con barra (es. "18/30 posti") se è in presenza, oppure la **piattaforma**
@@ -524,7 +532,7 @@ Sotto le schede c'è sempre il riquadro **"Unisciti alla community"** con il pul
   Badge **Online** viola e **In presenza** verde.
 - **Eventi passati**: card in grigio con badge **"Concluso"**, senza pulsanti. Anche loro seguono i filtri.
 
-### Iscrizione
+#### Iscrizione
 
 1. **"Partecipo"** apre una modale con **Nome** e **Cognome** già compilati dal profilo dell'utente di test
    (`PROFILO_TEST` in `config/credenzialiTest.ts`), modificabili. Sono obbligatori (almeno 2 caratteri).
@@ -540,12 +548,13 @@ Sotto le schede c'è sempre il riquadro **"Unisciti alla community"** con il pul
 > 🔒 Oggi il link della call è nascosto solo nell'interfaccia: chi legge il codice del sito può trovarlo. Con
 > Supabase andrà dato **dal server solo a chi è iscritta** (Row Level Security).
 
-### Scheda "Parla con noi"
+### Pagina Meeting (`/meeting`)
 
-- Testo: *"Bloccata su un lab? Un dubbio sulla lezione? Prenota una call con noi."*
+- Titolo **Meeting** e testo: *"Bloccata su un lab? Un dubbio sulla lezione? Prenota una call con noi."*
 - Due card per **Founder** e **Co-founder**: cerchio con le iniziali (al posto della foto), **nome segnaposto**,
-  ruolo e gli argomenti su cui aiutano. Si cambiano in `TEAM` in `data/eventi-mock.ts`.
-- **Tipi di call**, ognuno con durata, piattaforma e pulsante **"Prenota su Cal.com ↗"**:
+  ruolo e gli argomenti su cui aiutano. Si cambiano in `TEAM` in `data/meeting-mock.ts`.
+- **Tipi di call**, ognuno con durata, piattaforma e pulsante **"Prenota su Cal.com ↗"**
+  (si cambiano in `TIPI_CALL` in `data/meeting-mock.ts`):
 
 | Call | Durata | Per chi | Piattaforma (esempio) |
 | --- | --- | --- | --- |
@@ -553,8 +562,8 @@ Sotto le schede c'è sempre il riquadro **"Unisciti alla community"** con il pul
 | Q&A di gruppo | 45 min | Fino a 5 persone | Zoom |
 | Brainstorming lezione | 30 min | Sui contenuti dell'ultima lezione | Discord |
 
-Il sito **non ha un calendario**: la prenotazione avviene tutta su Cal.com, che manda la conferma via email con
-il link alla call.
+Sotto: *"Scegli l'orario, ricevi la conferma via email con il link alla call."* Il sito **non ha un calendario**:
+la prenotazione avviene tutta su Cal.com.
 
 ### I link esterni: `config/links.ts`
 
@@ -563,31 +572,44 @@ contengono la parola **`SOSTITUISCI`**: prima di pubblicare il sito vanno cambia
 
 | Chiave | Dove si vede | Cosa metterci |
 | --- | --- | --- |
-| `discord` | Footer, riquadro "Unisciti alla community" | Link di invito al server Discord (es. `https://discord.gg/abc123`) |
-| `calcom.call11` | Parla con noi → Call 1:1 | Pagina Cal.com della call 1:1 |
-| `calcom.qaGruppo` | Parla con noi → Q&A di gruppo | Pagina Cal.com del Q&A di gruppo |
-| `calcom.brainstorming` | Parla con noi → Brainstorming lezione | Pagina Cal.com del brainstorming |
-| `callEventi.zoom` / `.meet` / `.discord` | "Entra nella call ↗" degli eventi online | Link della call per piattaforma (con Supabase: un link per evento) |
+| `discord` | Footer, riquadro "Unisciti alla community" (Eventi e Meeting) | Link di invito al server Discord (es. `https://discord.gg/abc123`) |
+| `calcom.call11` | Meeting → Call 1:1 | Pagina Cal.com della call 1:1 |
+| `calcom.qaGruppo` | Meeting → Q&A di gruppo | Pagina Cal.com del Q&A di gruppo |
+| `calcom.brainstorming` | Meeting → Brainstorming lezione | Pagina Cal.com del brainstorming |
+| `callEventi.zoom` / `.meet` / `.discord` | Eventi → "Entra nella call ↗" degli eventi online | Link della call per piattaforma (con Supabase: un link per evento) |
 
-Tutti i link esterni si aprono in una **nuova scheda** con `rel="noopener noreferrer"`.
+Tutti i link esterni si aprono in una **nuova scheda** con `rel="noopener noreferrer"`: gli attributi sono in
+`LINK_ESTERNO`, nello stesso file.
 
 ### I file
 
 | File | Cosa contiene |
 | --- | --- |
-| `app/(riservata)/eventi/page.tsx` | La pagina: schede, evento del mese, filtri, griglie, modale |
-| `components/eventi/useEventi.ts` | Lo **stato**: eventi, iscrizioni, numero di iscritte, iscriviti/annulla |
+| `app/(riservata)/eventi/page.tsx` | Pagina Eventi: evento del mese, filtri, griglie, modale |
+| `app/(riservata)/meeting/page.tsx` | Pagina Meeting: team e tipi di call |
+| `components/eventi/useEventi.ts` | Lo **stato** degli eventi: iscrizioni, numero di iscritte, iscriviti/annulla |
 | `components/eventi/CardEventoMese.tsx`, `CardEvento.tsx` | Card dell'evento del mese e degli altri eventi |
 | `components/eventi/ModaleIscrizione.tsx`, `AzioniIscrizione.tsx` | Modale "Partecipo", pulsanti, link call, calendario |
-| `components/eventi/ParlaConNoi.tsx`, `RiquadroDiscord.tsx` | Scheda "Parla con noi" e riquadro Discord |
 | `components/eventi/Badge.tsx`, `InfoEvento.tsx`, `Icone.tsx` | Badge, data/luogo/posti, icone di temi e piattaforme |
-| `lib/eventi.ts`, `lib/ics.ts` | Tipi, regole e creazione del file `.ics` |
-| `data/eventi-mock.ts` | ⚠️ **Dati finti**: 6 eventi (4 in programma, 2 passati), team, tipi di call |
+| `components/meeting/CardTeam.tsx`, `CardTipoCall.tsx` | Card di Founder/Co-founder e dei tipi di call |
+| `components/RiquadroDiscord.tsx`, `IconaDiscord.tsx` | Riquadro Discord e logo Discord |
+| `lib/eventi.ts`, `lib/meeting.ts`, `lib/ics.ts` | Tipi, regole e creazione del file `.ics` |
+| `data/eventi-mock.ts` | ⚠️ **Dati finti**: 6 eventi (4 in programma, 2 passati) |
+| `data/meeting-mock.ts` | ⚠️ **Dati finti**: team (nomi segnaposto) e tipi di call |
 | `config/links.ts` | ⚠️ **Link esterni** segnaposto |
 
 Lo stile è lo stesso di CTF Groups: riusa card, pulsanti, modale e campi di `components/ctf/` e
 `components/Campo.tsx`. Le date dei dati finti sono calcolate rispetto a "adesso": l'evento del mese cade sempre
 nel mese corrente (quando possibile) e ci sono sempre eventi futuri e passati.
+
+### Integrazione futura con Supabase
+
+- **Eventi:** tabelle per eventi e iscrizioni al posto di `data/eventi-mock.ts`; le funzioni di
+  `components/eventi/useEventi.ts` leggeranno e scriveranno sul database. Posti, sold out e "un'iscrizione per
+  persona" andranno controllati **sul server**; il link della call verrà restituito solo a chi è iscritta (Row
+  Level Security) e ogni evento avrà il suo link.
+- **Meeting:** team e tipi di call possono restare nel codice o passare in una tabella al posto di
+  `data/meeting-mock.ts`. Le prenotazioni restano su **Cal.com**: il sito non salva appuntamenti.
 
 ---
 
@@ -711,7 +733,7 @@ Avvia l'app con `npm run dev` e apri http://localhost:3000.
       *"Numero massimo di gruppi raggiunto"*.
 - [ ] **Ricarica** – premi F5 → tutto torna ai dati di esempio (è normale: i dati sono finti).
 
-**Eventi e Parla con noi** (dal menu ☰ → Eventi, oppure http://localhost:3000/eventi)
+**Eventi** (dal menu ☰ → Eventi, oppure http://localhost:3000/eventi)
 
 - [ ] **Evento del mese** – "Hardware Hacking Night" in presenza, con conto alla rovescia, "18/30 posti" e
       "cosa portare".
@@ -722,9 +744,14 @@ Avvia l'app con `npm run dev` e apri http://localhost:3000.
 - [ ] **Evento online** – su "OSINT: trova le tracce" prima c'è "Il link sarà visibile dopo l'iscrizione"; dopo
       l'iscrizione compare "Entra nella call ↗".
 - [ ] **Calendario** – "Aggiungi al calendario" scarica `sec4her-….ics`; aprilo con il calendario del computer.
-- [ ] **Parla con noi** – due card del team, tre tipi di call con "Prenota su Cal.com ↗" (si apre in una nuova
-      scheda; per ora è un link segnaposto).
 - [ ] **Discord** – riquadro "Unisciti alla community" in fondo alla pagina e icona Discord nel footer.
+
+**Meeting** (dal menu ☰ → Meeting, oppure http://localhost:3000/meeting)
+
+- [ ] **Team** – due card (Founder e Co-founder) con iniziali, ruolo e argomenti.
+- [ ] **Tipi di call** – Call 1:1 (20 min), Q&A di gruppo (45 min), Brainstorming lezione (30 min), ognuna con la
+      piattaforma e "Prenota su Cal.com ↗" (si apre in una nuova scheda; per ora è un link segnaposto).
+- [ ] **Discord** – riquadro "Unisciti alla community" anche in fondo a questa pagina.
 
 **Vista da telefono**
 
@@ -824,6 +851,12 @@ Branch `eventi` (parte da `ctf-groups`):
     call su Cal.com; riquadro Discord e icona Discord nel footer. Link esterni in `config/links.ts`, dati finti in
     `data/eventi-mock.ts`.
 
+Branch `eventi-meeting` (parte da `eventi`):
+
+13. **Eventi e Meeting separati** – "Parla con noi" diventa la pagina **`/meeting`** del menu (team e tipi di call,
+    dati in `data/meeting-mock.ts`); `/eventi` senza schede. Riquadro Discord condiviso in fondo alle due pagine;
+    attributi dei link esterni in `LINK_ESTERNO` (`config/links.ts`).
+
 ---
 
 ## 15. Prossimi passi
@@ -833,10 +866,10 @@ Branch `eventi` (parte da `ctf-groups`):
   Le password non vanno mai salvate a mano: ci pensa il servizio di autenticazione.
 - **Eliminare le credenziali di test** (`config/credenzialiTest.ts`) appena il login vero funziona.
 - **Link veri** in `config/links.ts` (Discord, Cal.com, call degli eventi) e **nomi/foto reali** del team in
-  `data/eventi-mock.ts`.
+  `data/meeting-mock.ts`.
 - **Eventi su Supabase**: tabelle per eventi e iscrizioni al posto di `data/eventi-mock.ts`; posti e "un'iscrizione
   per persona" controllati **sul server**; link della call restituito solo a chi è iscritta (Row Level Security).
-- **Contenuti reali delle pagine del menu**: About us, Lezioni, Meeting, Bug Bounty Group,
+- **Contenuti reali delle pagine del menu**: About us, Lezioni, Bug Bounty Group,
   Contact us (oggi sono segnaposto).
 - **CTF Groups su Supabase**: tabelle per CTF, gruppi e membri al posto di `data/ctf-mock.ts`, con le regole
   (5 gruppi, 5 membri, un gruppo per CTF) controllate anche **sul server** e Row Level Security.

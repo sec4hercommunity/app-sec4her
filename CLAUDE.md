@@ -37,17 +37,17 @@ non salva dati. Entrambe le cose verranno sostituite da Supabase nella Fase 2.
 Sezione **CTF Groups** (`/ctf`, `/ctf/[id]`): solo grafica, dati finti in `data/ctf-mock.ts` gestiti con lo stato
 React in `components/ctf/CtfProvider.tsx`; limiti in `config/ctf.ts`. Con Supabase si sostituiscono quei due file.
 
-Pagina **Eventi** (`/eventi`, schede "Eventi" e "Parla con noi"): solo grafica, dati finti in `data/eventi-mock.ts`,
-stato in `components/eventi/useEventi.ts`. Il sito non costruisce strumenti: prenotazioni su Cal.com, call su
+Pagine **Eventi** (`/eventi`) e **Meeting** (`/meeting`): solo grafica, dati finti in `data/eventi-mock.ts` e
+`data/meeting-mock.ts`, stato degli eventi in `components/eventi/useEventi.ts`. Il sito non costruisce strumenti: prenotazioni su Cal.com, call su
 Zoom/Meet/Discord, community su Discord. **Tutti i link esterni** stanno in `config/links.ts` (segnaposto `SOSTITUISCI`)
-e si aprono in una nuova scheda con `rel="noopener noreferrer"`.
+e si aprono in una nuova scheda con `rel="noopener noreferrer"` (usa `LINK_ESTERNO`).
 
 ```
 app/          pagine (App Router); app/(riservata)/ = pagine che richiedono il login
-components/   AuthLayout, Campo, Pulsante, Header, Footer, Logo, Segnaposto; ctf/ e eventi/ per le sezioni
+components/   AuthLayout, Campo, Pulsante, Header, Footer, Logo, Segnaposto, RiquadroDiscord; ctf/, eventi/, meeting/ per le sezioni
 auth/         AuthProvider + useAuth()
 config/       credenzialiTest.ts, sito.ts (voci menu e contatti), ctf.ts (limiti CTF Groups), links.ts (link esterni)
-data/         ctf-mock.ts, eventi-mock.ts (dati finti, da sostituire con Supabase)
+data/         ctf-mock.ts, eventi-mock.ts, meeting-mock.ts (dati finti, da sostituire con Supabase)
 lib/          validazione.ts (regole dei campi, percorsoInterno contro gli open redirect)
 public/       loghi SVG
 ```

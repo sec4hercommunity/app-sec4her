@@ -1,9 +1,8 @@
 import IconaDiscord from '@/components/IconaDiscord'
 import { PULSANTE_PRIMARIO } from '@/components/ctf/stili'
-import { LINKS } from '@/config/links'
-import { ESTERNO } from './AzioniIscrizione'
+import { LINK_ESTERNO, LINKS } from '@/config/links'
 
-// Riquadro "Unisciti alla community": porta sul server Discord.
+// Riquadro "Unisciti alla community": porta sul server Discord (in fondo alle pagine Eventi e Meeting).
 export default function RiquadroDiscord() {
   return (
     <section
@@ -21,7 +20,7 @@ export default function RiquadroDiscord() {
           <p className="mt-1 text-text/80">Su Discord parliamo, ci aiutiamo e organizziamo i gruppi. Nessuna resta sola.</p>
         </div>
       </div>
-      <a href={LINKS.discord} {...ESTERNO} className={`${PULSANTE_PRIMARIO} shrink-0`}>
+      <a href={LINKS.discord} {...LINK_ESTERNO} className={`${PULSANTE_PRIMARIO} shrink-0`}>
         <IconaDiscord className="h-4 w-4" />
         Entra su Discord ↗
       </a>

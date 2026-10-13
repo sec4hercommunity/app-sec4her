@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import IconaDiscord from '@/components/IconaDiscord'
-import { PIATTAFORME, TEMI, type Piattaforma, type Tema } from '@/lib/eventi'
+import { PIATTAFORME, type Piattaforma, type Tema } from '@/lib/eventi'
 
 // Piccole icone a linea per i temi degli eventi e per le piattaforme delle call (currentColor).
 

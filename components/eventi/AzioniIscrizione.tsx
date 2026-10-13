@@ -1,18 +1,16 @@
 'use client'
 
 import { PULSANTE_PRIMARIO, PULSANTE_SECONDARIO } from '@/components/ctf/stili'
+import { LINK_ESTERNO } from '@/config/links'
 import { scaricaIcs } from '@/lib/ics'
 import { soldOut, type Evento, type Iscrizione } from '@/lib/eventi'
-
-// Link esterno: sempre in una nuova scheda, senza passare informazioni al sito aperto.
-export const ESTERNO = { target: '_blank', rel: 'noopener noreferrer' } as const
 
 // Link alla call (solo eventi online e solo dopo l'iscrizione) + "Aggiungi al calendario".
 export function DopoIscrizione({ evento }: { evento: Evento }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
       {evento.modalita === 'online' && evento.linkCall && (
-        <a href={evento.linkCall} {...ESTERNO} className={PULSANTE_PRIMARIO}>
+        <a href={evento.linkCall} {...LINK_ESTERNO} className={PULSANTE_PRIMARIO}>
           Entra nella call ↗
         </a>
       )}

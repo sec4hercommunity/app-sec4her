@@ -59,7 +59,7 @@ export default function CardEventoMese({ evento, iscritte, iscrizione, ora, onPa
           </div>
         </div>
 
-        <div className="flex flex-col gap-6 lg:w-80">
+        <div className="flex flex-col gap-6 lg:w-[22rem]">
           <div className="rounded-xl border border-white/10 bg-ink/80 p-5 font-mono">
             <p className="text-xs text-text/50">$ countdown --evento {evento.id.split('-')[0]}</p>
             {inCorso ? (
@@ -67,7 +67,7 @@ export default function CardEventoMese({ evento, iscritte, iscrizione, ora, onPa
                 &gt; in corso ora<span className="cursor-blink">_</span>
               </p>
             ) : (
-              <p className="mt-3 text-3xl font-bold text-hack sm:text-4xl" aria-label={`Inizia tra ${contoAllaRovescia(Date.parse(evento.inizio) - ora)}`}>
+              <p className="mt-3 whitespace-nowrap text-3xl font-bold text-hack" aria-label={`Inizia tra ${contoAllaRovescia(Date.parse(evento.inizio) - ora)}`}>
                 &gt; {contoAllaRovescia(Date.parse(evento.inizio) - ora)}
                 <span className="cursor-blink">_</span>
               </p>

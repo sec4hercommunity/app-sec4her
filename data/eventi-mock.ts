@@ -1,4 +1,4 @@
-// ⚠️ DATI FINTI per la pagina Eventi e "Parla con noi" ⚠️
+// ⚠️ DATI FINTI per la pagina Eventi ⚠️
 //
 // Servono solo a mostrare la grafica finché non c'è un database. Le iscrizioni fatte nel sito restano
 // solo nella memoria del browser e spariscono ricaricando la pagina. Con Supabase questo file verrà
@@ -7,7 +7,7 @@
 // Le date sono calcolate rispetto a "adesso", così ci sono sempre eventi futuri e passati.
 
 import { LINKS } from '@/config/links'
-import type { Evento, Piattaforma } from '@/lib/eventi'
+import type { Evento } from '@/lib/eventi'
 
 const GIORNO = 24 * 60 * 60 * 1000
 
@@ -107,55 +107,5 @@ export const EVENTI_INIZIALI: Evento[] = [
     descrizione: 'Intercettiamo le richieste di un sito di prova e le modifichiamo: il primo passo del web hacking.',
     cosaPortare: ['il tuo laptop con Burp Suite Community installato'],
     iscritte: 35,
-  },
-]
-
-// ---- Scheda "Parla con noi" ----
-
-export type PersonaTeam = { nome: string; ruolo: string; argomenti: string[] }
-
-// Nomi SEGNAPOSTO: da sostituire con quelli veri (e, più avanti, con una foto).
-export const TEAM: PersonaTeam[] = [
-  { nome: 'Nome Founder', ruolo: 'Founder', argomenti: ['Web hacking', 'Lab PortSwigger', 'Bug bounty'] },
-  { nome: 'Nome Co-founder', ruolo: 'Co-founder', argomenti: ['CTF', 'OSINT', 'Linux'] },
-]
-
-export type TipoCall = {
-  id: string
-  titolo: string
-  durataMinuti: number
-  descrizione: string
-  persone: string
-  piattaforma: Piattaforma
-  linkPrenotazione: string
-}
-
-export const TIPI_CALL: TipoCall[] = [
-  {
-    id: 'call-1-1',
-    titolo: 'Call 1:1',
-    durataMinuti: 20,
-    descrizione: 'Bloccata su un lab o su un concetto? Lo guardiamo insieme.',
-    persone: 'Individuale',
-    piattaforma: 'meet',
-    linkPrenotazione: LINKS.calcom.call11,
-  },
-  {
-    id: 'qa-di-gruppo',
-    titolo: 'Q&A di gruppo',
-    durataMinuti: 45,
-    descrizione: 'Porta le tue domande: si risponde insieme e si impara anche da quelle delle altre.',
-    persone: 'Fino a 5 persone',
-    piattaforma: 'zoom',
-    linkPrenotazione: LINKS.calcom.qaGruppo,
-  },
-  {
-    id: 'brainstorming-lezione',
-    titolo: 'Brainstorming lezione',
-    durataMinuti: 30,
-    descrizione: "Rivediamo i contenuti dell'ultima lezione: dubbi, approfondimenti e idee.",
-    persone: "Sui contenuti dell'ultima lezione",
-    piattaforma: 'discord',
-    linkPrenotazione: LINKS.calcom.brainstorming,
   },
 ]

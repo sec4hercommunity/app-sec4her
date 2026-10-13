@@ -16,7 +16,7 @@ export const LINKS = {
   // Invito al server Discord della community (footer + riquadro "Unisciti alla community").
   discord: 'https://discord.gg/SOSTITUISCI',
 
-  // Pagine di prenotazione Cal.com, una per tipo di call (scheda "Parla con noi").
+  // Pagine di prenotazione Cal.com, una per tipo di call (pagina /meeting).
   calcom: {
     call11: 'https://cal.com/SOSTITUISCI/call-1-1',
     qaGruppo: 'https://cal.com/SOSTITUISCI/qa-di-gruppo',
@@ -31,3 +31,6 @@ export const LINKS = {
     discord: 'https://discord.gg/SOSTITUISCI',
   },
 } as const
+
+// Attributi da mettere su ogni link esterno: si apre in una nuova scheda senza passare informazioni al sito aperto.
+export const LINK_ESTERNO = { target: '_blank', rel: 'noopener noreferrer' } as const
