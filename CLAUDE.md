@@ -34,11 +34,15 @@ segnaposto del menu (`app/(riservata)/[sezione]`). Il login usa solo le credenzi
 `config/credenzialiTest.ts`, con protezione solo lato browser (`app/(riservata)/layout.tsx`); la registrazione
 non salva dati. Entrambe le cose verranno sostituite da Supabase nella Fase 2.
 
+Sezione **CTF Groups** (`/ctf`, `/ctf/[id]`): solo grafica, dati finti in `data/ctf-mock.ts` gestiti con lo stato
+React in `components/ctf/CtfProvider.tsx`; limiti in `config/ctf.ts`. Con Supabase si sostituiscono quei due file.
+
 ```
 app/          pagine (App Router); app/(riservata)/ = pagine che richiedono il login
-components/   AuthLayout, Campo, Pulsante, Header, Footer, Logo, Segnaposto
+components/   AuthLayout, Campo, Pulsante, Header, Footer, Logo, Segnaposto; ctf/ per CTF Groups
 auth/         AuthProvider + useAuth()
-config/       credenzialiTest.ts, sito.ts (voci menu e contatti)
+config/       credenzialiTest.ts, sito.ts (voci menu e contatti), ctf.ts (limiti CTF Groups)
+data/         ctf-mock.ts (dati finti, da sostituire con Supabase)
 lib/          validazione.ts (regole dei campi, percorsoInterno contro gli open redirect)
 public/       loghi SVG
 ```

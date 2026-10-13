@@ -13,7 +13,9 @@ Questo repository contiene la **web app** di Sec4Her. Oggi l'app ha:
 
 - le pagine **Accedi** e **Registrati**, con controlli sui campi;
 - una **Home riservata** (`/home`) con header, menu ☰, presentazione dell'Academy e footer;
-- una **pagina segnaposto** per ogni voce del menu.
+- la sezione **CTF Groups** (`/ctf`): lista dei CTF, aggiunta di un CTF e gruppi per partecipare insieme
+  (con **dati finti** per ora);
+- una **pagina segnaposto** per le altre voci del menu.
 
 > ⚠️ Il login funziona solo con delle **credenziali di test** e la registrazione **non salva dati**: il
 > collegamento a un database per gestire davvero gli account verrà fatto più avanti.
@@ -29,12 +31,13 @@ Questo repository contiene la **web app** di Sec4Her. Oggi l'app ha:
 5. [Pagine di Accesso e Registrazione](#5-pagine-di-accesso-e-registrazione)
 6. [Login di test, pagine protette ed Esci](#6-login-di-test-pagine-protette-ed-esci)
 7. [La pagina Home](#7-la-pagina-home)
-8. [I loghi](#8-i-loghi)
-9. [Stile e colori del brand](#9-stile-e-colori-del-brand)
-10. [Come testare](#10-come-testare)
-11. [Come lavoriamo in due](#11-come-lavoriamo-in-due)
-12. [Cronologia modifiche](#12-cronologia-modifiche)
-13. [Prossimi passi](#13-prossimi-passi)
+8. [CTF Groups](#8-ctf-groups)
+9. [I loghi](#9-i-loghi)
+10. [Stile e colori del brand](#10-stile-e-colori-del-brand)
+11. [Come testare](#11-come-testare)
+12. [Come lavoriamo in due](#12-come-lavoriamo-in-due)
+13. [Cronologia modifiche](#13-cronologia-modifiche)
+14. [Prossimi passi](#14-prossimi-passi)
 
 ---
 
@@ -151,7 +154,11 @@ app-sec4her/
 │   └── (riservata)/            Pagine che richiedono il login (le parentesi non finiscono nell'indirizzo)
 │       ├── layout.tsx          Protezione + struttura: header, contenuto bianco, footer
 │       ├── home/page.tsx       Home riservata (/home): logo grande e presentazione dell'Academy
-│       └── [sezione]/page.tsx  Pagina segnaposto per ogni voce del menu (/about, /lezioni, …)
+│       ├── ctf/                CTF Groups (sezione 8)
+│       │   ├── layout.tsx      Stato condiviso dei CTF + sfondo scuro
+│       │   ├── page.tsx        Lista dei CTF (/ctf)
+│       │   └── [id]/page.tsx   Dettaglio di un CTF con i gruppi (/ctf/ctf-hunter, …)
+│       └── [sezione]/page.tsx  Pagina segnaposto per le altre voci del menu (/about, /lezioni, …)
 ├── components/                 Pezzi riutilizzati dalle pagine
 │   ├── AuthLayout.tsx          Cornice di Accedi/Registrati: logo, slogan, card centrata
 │   ├── Campo.tsx               Campo di testo con etichetta e messaggio di errore
@@ -159,15 +166,20 @@ app-sec4her/
 │   ├── Logo.tsx                Mostra un logo; se l'immagine manca mostra la scritta "sec4her"
 │   ├── Header.tsx              Barra in alto: logo a sinistra, menu ☰ a destra (con "Esci")
 │   ├── Footer.tsx              Barra in basso: Contatti (Email · Instagram), slogan, copyright
-│   └── Segnaposto.tsx          Contenuto provvisorio delle pagine del menu
+│   ├── Segnaposto.tsx          Contenuto provvisorio delle pagine del menu
+│   └── ctf/                    Pezzi della sezione CTF Groups (card, modali, badge, avatar…)
 ├── auth/
 │   ├── AuthProvider.tsx        Stato del login: accedi, esci, utente collegata
 │   └── contesto.ts             Hook useAuth() per leggere lo stato del login da qualsiasi pagina
 ├── config/
 │   ├── credenzialiTest.ts      ⚠️ Email e password di TEST (solo sviluppo)
-│   └── sito.ts                 Voci del menu e contatti del footer (facili da modificare)
+│   ├── sito.ts                 Voci del menu e contatti del footer (facili da modificare)
+│   └── ctf.ts                  Limiti dei CTF Groups (max gruppi, max membri) e opzioni dei moduli
+├── data/
+│   └── ctf-mock.ts             ⚠️ Dati FINTI dei CTF e dei gruppi (da sostituire con Supabase)
 ├── lib/
-│   └── validazione.ts          Regole di controllo dei campi, testi degli errori, controllo dei redirect
+│   ├── validazione.ts          Regole di controllo dei campi, testi degli errori, controllo dei redirect
+│   └── ctf.ts                  Tipi e regole dei CTF: stato, conto alla rovescia, controlli dei moduli
 ├── next.config.ts              Configurazione di Next.js
 ├── postcss.config.mjs          Collega Tailwind a Next.js
 ├── tsconfig.json               Configurazione di TypeScript (es. `@/` = cartella principale negli import)
@@ -341,8 +353,8 @@ Ogni pagina riservata (Home e pagine del menu) ha tre parti, definite in `app/(r
 
 ### Il menu ☰
 
-Le voci sono definite in **`config/sito.ts`** (per aggiungerne una basta aggiungere una riga) e ognuna porta
-a una **pagina segnaposto** (`app/(riservata)/[sezione]/page.tsx`, che usa `components/Segnaposto.tsx`) con lo stesso header e footer, il titolo della sezione e la scritta
+Le voci sono definite in **`config/sito.ts`** (per aggiungerne una basta aggiungere una riga). **CTF Groups**
+ha la sua pagina vera (sezione 8); le altre portano a una **pagina segnaposto** (`app/(riservata)/[sezione]/page.tsx`, che usa `components/Segnaposto.tsx`) con lo stesso header e footer, il titolo della sezione e la scritta
 *"[in costruzione] Questa sezione arriverà presto."*
 
 | Voce | Indirizzo |
@@ -351,7 +363,7 @@ a una **pagina segnaposto** (`app/(riservata)/[sezione]/page.tsx`, che usa `comp
 | Lezioni | `/lezioni` |
 | Eventi | `/eventi` |
 | Meeting | `/meeting` |
-| CTF Groups | `/ctf` |
+| CTF Groups | `/ctf` (pagina vera, sezione 8) |
 | Bug Bounty Group | `/bug-bounty` |
 | Contact us | `/contatti` |
 | **Esci** | fa il logout e torna su `/accedi` |
@@ -383,7 +395,98 @@ I contatti sono nella lista `CONTATTI` in **`config/sito.ts`**. Sono **valori se
 
 ---
 
-## 8. I loghi
+## 8. CTF Groups
+
+**L'idea:** un'utente sceglie un CTF su [CTFtime](https://ctftime.org), lo aggiunge al sito, e le altre possono
+creare un gruppo o entrare in un gruppo per partecipare insieme. *Nessuna gioca da sola.*
+
+> ⚠️ **Per ora è solo la parte grafica, con dati finti.** I CTF e i gruppi di partenza sono in
+> **`data/ctf-mock.ts`** e tutto quello che fai (CTF aggiunti, gruppi creati, iscrizioni) resta nella memoria del
+> browser: **ricaricando la pagina si torna ai dati di esempio**. Quando collegheremo Supabase basterà sostituire
+> quel file (e le funzioni di `components/ctf/CtfProvider.tsx` che modificano i dati) con la lettura e la scrittura
+> sul database.
+
+### Lista dei CTF (`/ctf`)
+
+- Titolo **CTF Groups**, sottotitolo e pulsante **"+ Aggiungi CTF"** in alto a destra.
+- **Filtri a pillole**: Tutti · In arrivo · In corso · Conclusi (con il numero di CTF per ognuno).
+- Una **card per CTF** con: nome, date di inizio e fine, **badge di stato** (In arrivo viola, In corso verde con
+  puntino che pulsa, Concluso grigio), **conto alla rovescia** ("inizia tra 3g 4h", oppure "termina tra…" se è in
+  corso), formato e livello, link **"Vedi su CTFtime ↗"**, **"3/5 gruppi"** con barra di avanzamento e pulsante
+  **"Vedi gruppi"**.
+- Ordine: prima quelli in corso, poi quelli in arrivo (il più vicino prima), infine i conclusi.
+- Lo stato non si scrive a mano: è calcolato dalle date e si aggiorna da solo ogni 30 secondi.
+
+### Aggiungi CTF (finestra modale)
+
+Campi: nome, link CTFtime, data e ora di inizio e fine, formato (Jeopardy / Attack-Defense), livello
+(Principiante / Intermedio / Avanzato), breve descrizione. Controlli (`validaNuovoCtf` in `lib/ctf.ts`):
+
+| Campo | Controllo | Messaggio di errore |
+| --- | --- | --- |
+| Nome | Vuoto / meno di 2 caratteri | *Inserisci il nome del CTF.* |
+| Link CTFtime | Vuoto | *Inserisci il link di CTFtime.* |
+| Link CTFtime | Non inizia con `https://ctftime.org/` | *Il link deve iniziare con https://ctftime.org/* |
+| Data inizio / fine | Vuota | *Inserisci la data di inizio.* / *…di fine.* |
+| Data fine | Uguale o prima dell'inizio | *La data di fine deve essere dopo la data di inizio.* |
+| Formato / Livello | Non scelto | *Scegli il formato.* / *Scegli il livello.* |
+| Descrizione | Facoltativa, massimo 200 caratteri | *La descrizione può avere al massimo 200 caratteri.* |
+
+Al salvataggio la modale si chiude e la nuova card compare subito nella lista (bordo viola per riconoscerla).
+La modale si chiude anche con **✕**, con **Esc** o cliccando fuori.
+
+### Dettaglio di un CTF (`/ctf/[id]`)
+
+- In alto le informazioni del CTF in grande e il link **"← Torna ai CTF"**.
+- Sezione **"> Gruppi"**: una card per gruppo con nome, nota, **membri come cerchietti con le iniziali**,
+  **posti liberi come cerchietti tratteggiati**, e il pulsante **"Unisciti"** → diventa **"Sei nel gruppo ✓"** e
+  compare **"Esci dal gruppo"**. Se il gruppo è pieno: badge **"Completo"** e pulsante disattivato.
+- Card **"+ Crea gruppo"** (bordo tratteggiato viola) → piccola modale con nome del gruppo e una nota facoltativa
+  (es. *"cerchiamo qualcuna forte in web"*). Chi crea il gruppo ne fa subito parte.
+- Con **5 gruppi** la card "+ Crea gruppo" sparisce e compare **"Numero massimo di gruppi raggiunto"**.
+
+### Le regole
+
+| Regola | Dove si cambia |
+| --- | --- |
+| Massimo **5 gruppi** per CTF | `MAX_GRUPPI_PER_CTF` in `config/ctf.ts` |
+| Massimo **5 membri** per gruppo | `MAX_MEMBRI_PER_GRUPPO` in `config/ctf.ts` |
+| Un'utente può stare in **un solo gruppo per CTF** (gli altri "Unisciti" e "Crea gruppo" si disattivano) | `CtfProvider.tsx` |
+| Un gruppo che resta **senza membri viene eliminato**, così libera il posto | `CtfProvider.tsx` |
+| Nomi dei gruppi: da 2 a 30 caratteri, **niente doppioni** nello stesso CTF | `validaNomeGruppo` in `lib/ctf.ts` |
+| Su un CTF **concluso** i gruppi si vedono ma non si possono più creare o cambiare | pagina `ctf/[id]` |
+
+L'utente attuale è quella delle **credenziali di test** (`test@sec4her.com`, avatar **"TE"** con il bordo chiaro).
+
+### I file
+
+| File | Cosa contiene |
+| --- | --- |
+| `app/(riservata)/ctf/page.tsx` | Pagina lista con filtri e modale "Aggiungi CTF" |
+| `app/(riservata)/ctf/[id]/page.tsx` | Pagina dettaglio con i gruppi e la modale "Crea gruppo" |
+| `app/(riservata)/ctf/layout.tsx` | Tiene i dati condivisi tra le due pagine e rende scuro lo sfondo |
+| `components/ctf/CtfProvider.tsx` | Lo **stato** (CTF e gruppi) e le azioni: aggiungi CTF, crea gruppo, unisciti, esci |
+| `components/ctf/CardCtf.tsx`, `CardGruppo.tsx` | Le card della lista e dei gruppi (con gli avatar) |
+| `components/ctf/ModaleAggiungiCtf.tsx`, `ModaleCreaGruppo.tsx`, `Modale.tsx` | Le finestre modali |
+| `components/ctf/BadgeStato.tsx`, `InfoCtf.tsx` | Badge di stato, date, conto alla rovescia, etichette, barra dei gruppi |
+| `components/ctf/CampiModulo.tsx`, `stili.ts`, `useOra.ts` | Menu a tendina e area di testo, classi comuni, orologio che si aggiorna |
+| `config/ctf.ts` | Limiti e opzioni (formati, livelli, prefisso del link CTFtime) |
+| `lib/ctf.ts` | Tipi dei dati e regole (stato, conto alla rovescia, controlli dei moduli) |
+| `data/ctf-mock.ts` | ⚠️ I **dati finti**: 4 CTF (in corso, due in arrivo, concluso) e i loro gruppi |
+
+Le date dei dati finti sono calcolate rispetto al momento in cui apri la pagina, così ci sono sempre CTF in
+arrivo, in corso e conclusi. I link "Vedi su CTFtime" dei CTF di esempio aprono la lista dei CTF in arrivo su
+CTFtime.
+
+### Stile
+
+Sfondo scuro (anche la parte centrale, che nelle altre pagine è bianca), card un po' più chiare con bordo sottile
+che **si sollevano con un bagliore viola** al passaggio del mouse, titoli monospace con `>` davanti alle sezioni,
+modali che compaiono in **dissolvenza**. Solo i colori del brand. Su telefono le card vanno una sotto l'altra.
+
+---
+
+## 9. I loghi
 
 Tutti i loghi sono in `public/` e sono file **SVG** (immagini vettoriali: restano nitide a ogni dimensione).
 
@@ -408,7 +511,7 @@ e, se l'immagine non si carica, mostra al suo posto la scritta **sec4her**:
 
 ---
 
-## 9. Stile e colori del brand
+## 10. Stile e colori del brand
 
 I colori sono definiti una sola volta in `app/globals.css` e si usano come classi Tailwind:
 
@@ -445,7 +548,7 @@ Altri dettagli:
 
 ---
 
-## 10. Come testare
+## 11. Come testare
 
 Avvia l'app con `npm run dev` e apri http://localhost:3000.
 
@@ -489,6 +592,20 @@ Avvia l'app con `npm run dev` e apri http://localhost:3000.
       in una nuova scheda.
 - [ ] Sotto: `> HACK THE FUTURE_` in verde e "© 2026 Sec4Her".
 
+**CTF Groups** (dal menu ☰ → CTF Groups, oppure http://localhost:3000/ctf)
+
+- [ ] **Lista** – 4 card con badge diversi; "CTF Hunter" è *In corso* col puntino che pulsa; "Packet Storm CTF"
+      mostra *"inizia tra 3g …"*; i filtri a pillole mostrano solo i CTF di quello stato.
+- [ ] **Aggiungi CTF** – "Salva CTF" a vuoto → errori sotto i campi; link `https://google.com` → errore sul link;
+      data fine prima dell'inizio → errore; tutto corretto → la card compare subito nella lista.
+- [ ] **Dettaglio** – "Vedi gruppi" su CTF Hunter → "Team Root" è *Completo* con il pulsante disattivato.
+- [ ] **Unisciti** – su "Byte Queens" → *"Sei nel gruppo ✓"*, compare il tuo avatar "TE" ed "Esci dal gruppo";
+      gli altri "Unisciti" e "+ Crea gruppo" si disattivano (un solo gruppo per CTF).
+- [ ] **Crea gruppo** – esci dal gruppo, poi "+ Crea gruppo" → il nuovo gruppo compare con te dentro.
+- [ ] **Limite** – su "Packet Storm CTF" ci sono già 5 gruppi → niente "+ Crea gruppo" e messaggio
+      *"Numero massimo di gruppi raggiunto"*.
+- [ ] **Ricarica** – premi F5 → tutto torna ai dati di esempio (è normale: i dati sono finti).
+
 **Vista da telefono**
 
 - [ ] Nel browser premi **F12**, poi l'icona del telefono (*Toggle device toolbar*, oppure `Ctrl + Shift + M`).
@@ -501,7 +618,7 @@ Avvia l'app con `npm run dev` e apri http://localhost:3000.
 
 ---
 
-## 11. Come lavoriamo in due
+## 12. Come lavoriamo in due
 
 Lavoriamo **ognuna sul proprio branch** e uniamo le modifiche su `main` solo tramite **pull request**.
 Non si fanno commit direttamente su `main`.
@@ -547,7 +664,7 @@ clicca **"Merge pull request"**. Dopo il merge, entrambe tornano su `main` e fan
 
 ---
 
-## 12. Cronologia modifiche
+## 13. Cronologia modifiche
 
 Branch `login`:
 
@@ -574,16 +691,24 @@ Branch `migrazione-nextjs` (parte da `home`):
     con aspetto e comportamento identici. Unica differenza: la pagina da cui si arriva su Accedi è nell'indirizzo
     (`?da=/eventi`) e accetta solo percorsi interni. Rimossi `index.html`, `vite.config.js` e `src/`.
 
+Branch `ctf-groups` (parte da `migrazione-nextjs`):
+
+11. **CTF Groups** – pagine `/ctf` e `/ctf/[id]` con lista dei CTF, filtri, modale "Aggiungi CTF", gruppi con
+    avatar, "Unisciti" / "Esci dal gruppo", "Crea gruppo" e limiti configurabili. Solo grafica, con dati finti in
+    `data/ctf-mock.ts`.
+
 ---
 
-## 13. Prossimi passi
+## 14. Prossimi passi
 
 - **Database vero per gli account**, ad esempio **Supabase** (quello previsto nel documento di architettura:
   database PostgreSQL con login già pronto) oppure **Firebase**: registrazione che salva davvero e login vero.
   Le password non vanno mai salvate a mano: ci pensa il servizio di autenticazione.
 - **Eliminare le credenziali di test** (`config/credenzialiTest.ts`) appena il login vero funziona.
-- **Contenuti reali delle pagine del menu**: About us, Lezioni, Eventi, Meeting, CTF Groups, Bug Bounty Group,
+- **Contenuti reali delle pagine del menu**: About us, Lezioni, Eventi, Meeting, Bug Bounty Group,
   Contact us (oggi sono segnaposto).
+- **CTF Groups su Supabase**: tabelle per CTF, gruppi e membri al posto di `data/ctf-mock.ts`, con le regole
+  (5 gruppi, 5 membri, un gruppo per CTF) controllate anche **sul server** e Row Level Security.
 - **Contatti reali** nel footer (`config/sito.ts`) e **testo definitivo** della presentazione in Home.
 - **Recupero password** ("Password dimenticata?"), oggi non presente.
 - **Controlli lato server**: con un database, i controlli sui campi andranno ripetuti anche lì, perché quelli nel
