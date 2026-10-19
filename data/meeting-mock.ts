@@ -32,13 +32,4 @@ export const TIPI_CALL: TipoCall[] = [
     piattaforma: 'zoom',
     linkPrenotazione: LINKS.calcom.qaGruppo,
   },
-  {
-    id: 'brainstorming-lezione',
-    titolo: 'Brainstorming lezione',
-    durataMinuti: 30,
-    descrizione: "Rivediamo i contenuti dell'ultima lezione: dubbi, approfondimenti e idee.",
-    persone: "Sui contenuti dell'ultima lezione",
-    piattaforma: 'discord',
-    linkPrenotazione: LINKS.calcom.brainstorming,
-  },
 ]

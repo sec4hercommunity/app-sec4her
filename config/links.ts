@@ -20,7 +20,6 @@ export const LINKS = {
   calcom: {
     call11: 'https://cal.com/SOSTITUISCI/call-1-1',
     qaGruppo: 'https://cal.com/SOSTITUISCI/qa-di-gruppo',
-    brainstorming: 'https://cal.com/SOSTITUISCI/brainstorming-lezione',
   },
 
   // Link delle call per gli eventi online, per piattaforma. Visibili solo dopo l'iscrizione.

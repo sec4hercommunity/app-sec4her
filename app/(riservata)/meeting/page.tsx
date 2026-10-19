@@ -31,7 +31,7 @@ export default function PaginaMeeting() {
         <h2 id="titolo-tipi-call" className="font-mono text-2xl font-bold text-text">
           <span className="text-hack">&gt;</span> Tipi di call
         </h2>
-        <div className="mt-6 grid gap-5 md:grid-cols-3">
+        <div className="mx-auto mt-6 grid max-w-4xl gap-5 md:grid-cols-2">
           {TIPI_CALL.map((t) => (
             <CardTipoCall key={t.id} tipo={t} />
           ))}

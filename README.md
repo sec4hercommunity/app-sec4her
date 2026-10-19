@@ -553,14 +553,13 @@ accanto a Email e Instagram.
 - Titolo **Meeting** e testo: *"Bloccata su un lab? Un dubbio sulla lezione? Prenota una call con noi."*
 - Due card per **Founder** e **Co-founder**: cerchio con le iniziali (al posto della foto), **nome segnaposto**,
   ruolo e gli argomenti su cui aiutano. Si cambiano in `TEAM` in `data/meeting-mock.ts`.
-- **Tipi di call**, ognuno con durata, piattaforma e pulsante **"Prenota su Cal.com ↗"**
+- **Due tipi di call**, ognuno con durata, piattaforma e pulsante **"Prenota su Cal.com ↗"**
   (si cambiano in `TIPI_CALL` in `data/meeting-mock.ts`):
 
 | Call | Durata | Per chi | Piattaforma (esempio) |
 | --- | --- | --- | --- |
 | Call 1:1 | 20 min | Individuale | Google Meet |
 | Q&A di gruppo | 45 min | Fino a 5 persone | Zoom |
-| Brainstorming lezione | 30 min | Sui contenuti dell'ultima lezione | Discord |
 
 Sotto: *"Scegli l'orario, ricevi la conferma via email con il link alla call."* Il sito **non ha un calendario**:
 la prenotazione avviene tutta su Cal.com.
@@ -575,7 +574,6 @@ contengono la parola **`SOSTITUISCI`**: prima di pubblicare il sito vanno cambia
 | `discord` | Footer, riquadro "Unisciti alla community" (Eventi e Meeting) | Link di invito al server Discord (es. `https://discord.gg/abc123`) |
 | `calcom.call11` | Meeting → Call 1:1 | Pagina Cal.com della call 1:1 |
 | `calcom.qaGruppo` | Meeting → Q&A di gruppo | Pagina Cal.com del Q&A di gruppo |
-| `calcom.brainstorming` | Meeting → Brainstorming lezione | Pagina Cal.com del brainstorming |
 | `callEventi.zoom` / `.meet` / `.discord` | Eventi → "Entra nella call ↗" degli eventi online | Link della call per piattaforma (con Supabase: un link per evento) |
 
 Tutti i link esterni si aprono in una **nuova scheda** con `rel="noopener noreferrer"`: gli attributi sono in
@@ -749,7 +747,7 @@ Avvia l'app con `npm run dev` e apri http://localhost:3000.
 **Meeting** (dal menu ☰ → Meeting, oppure http://localhost:3000/meeting)
 
 - [ ] **Team** – due card (Founder e Co-founder) con iniziali, ruolo e argomenti.
-- [ ] **Tipi di call** – Call 1:1 (20 min), Q&A di gruppo (45 min), Brainstorming lezione (30 min), ognuna con la
+- [ ] **Tipi di call** – Call 1:1 (20 min), Q&A di gruppo (45 min), affiancate su computer e una sotto l'altra da telefono, ognuna con la
       piattaforma e "Prenota su Cal.com ↗" (si apre in una nuova scheda; per ora è un link segnaposto).
 - [ ] **Discord** – riquadro "Unisciti alla community" anche in fondo a questa pagina.
 
