@@ -6,8 +6,9 @@ import { soldOut, type Evento, type Iscrizione } from '@/lib/eventi'
 
 // Stato della pagina Eventi, tenuto in memoria con React.
 // Parte dai dati finti di data/eventi-mock.ts: con Supabase queste funzioni leggeranno e scriveranno sul database.
-export function useEventi() {
-  const [eventi] = useState<Evento[]>(EVENTI_INIZIALI)
+// Lo usano anche le sessioni live delle Lezioni, passando le proprie date (data/lezioni-mock.ts).
+export function useEventi(iniziali: Evento[] = EVENTI_INIZIALI) {
+  const [eventi] = useState<Evento[]>(iniziali)
   // Iscrizioni dell'utente attuale: id evento → nome e cognome.
   const [iscrizioni, setIscrizioni] = useState<Record<string, Iscrizione>>({})
 

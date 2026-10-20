@@ -61,10 +61,12 @@ type Props = {
   iscritte: number
   onPartecipo: () => void
   onAnnulla: () => void
+  // Testo del pulsante di iscrizione (le sessioni live delle Lezioni usano "Prenota il posto").
+  testoPulsante?: string
 }
 
 // Pulsanti di una card evento futura: Partecipo / Sold out / Iscritta ✓ + Annulla iscrizione.
-export default function AzioniIscrizione({ evento, iscrizione, iscritte, onPartecipo, onAnnulla }: Props) {
+export default function AzioniIscrizione({ evento, iscrizione, iscritte, onPartecipo, onAnnulla, testoPulsante = 'Partecipo' }: Props) {
   if (iscrizione) {
     return (
       <div className="space-y-3">
@@ -89,7 +91,7 @@ export default function AzioniIscrizione({ evento, iscrizione, iscritte, onParte
   return (
     <div className="space-y-3">
       <button type="button" onClick={onPartecipo} disabled={esaurito} className={`${PULSANTE_PRIMARIO} w-full sm:w-auto`}>
-        {esaurito ? 'Sold out' : 'Partecipo'}
+        {esaurito ? 'Sold out' : testoPulsante}
       </button>
       {evento.modalita === 'online' && <LinkNascosto />}
     </div>

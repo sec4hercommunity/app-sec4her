@@ -14,10 +14,12 @@ type Props = {
   iscritta: boolean
   onConferma: (dati: Iscrizione) => void
   onChiudi: () => void
+  // Titolo della modale (le sessioni live delle Lezioni usano "Prenota il posto").
+  titolo?: string
 }
 
 // Modale "Partecipo": nome e cognome già compilati dal profilo dell'utente (modificabili).
-export default function ModaleIscrizione({ evento, iscritta, onConferma, onChiudi }: Props) {
+export default function ModaleIscrizione({ evento, iscritta, onConferma, onChiudi, titolo = 'Partecipo' }: Props) {
   const [valori, setValori] = useState<Iscrizione>({ nome: PROFILO_TEST.nome, cognome: PROFILO_TEST.cognome })
   const [errori, setErrori] = useState<Partial<Record<keyof Iscrizione, string>>>({})
 
@@ -58,7 +60,7 @@ export default function ModaleIscrizione({ evento, iscritta, onConferma, onChiud
   }
 
   return (
-    <Modale titolo="Partecipo" onChiudi={onChiudi}>
+    <Modale titolo={titolo} onChiudi={onChiudi}>
       <p className="-mt-2 mb-6 text-sm text-text/70">
         <span className="font-mono text-hack">&gt;</span> {evento.titolo} · {dataEvento(evento.inizio)}, ore{' '}
         {oraEvento(evento.inizio)}

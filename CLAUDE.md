@@ -42,12 +42,20 @@ Pagine **Eventi** (`/eventi`) e **Meeting** (`/meeting`): solo grafica, dati fin
 Zoom/Meet/Discord, community su Discord. **Tutti i link esterni** stanno in `config/links.ts` (segnaposto `SOSTITUISCI`)
 e si aprono in una nuova scheda con `rel="noopener noreferrer"` (usa `LINK_ESTERNO`).
 
+Sezione **Lezioni** (`/lezioni`, `/lezioni/[modulo]`, `/lezioni/[modulo]/[lezione]`): solo grafica. Moduli, elenco lezioni,
+progressi e sessioni live sono dati finti in `data/lezioni-mock.ts` (stato in `components/lezioni/LezioniProvider.tsx`);
+il testo delle lezioni è **MDX** in `content/lezioni/<modulo>/<lezione>.mdx` (note da Obsidian), con le proprietà in
+cima al file (filo, lab, lab_link, domande, bottino, compito, prossima) e i componenti di `mdx-components.tsx`
+(Callout, Schema, Flusso, blocco ```http). Le sessioni live riusano l'iscrizione degli Eventi. Nei lab niente soluzioni
+pronte; mai dettagli di bug reali. Un file MDX è codice: solo contenuti di founder e co-founder, mai input delle utenti.
+
 ```
 app/          pagine (App Router); app/(riservata)/ = pagine che richiedono il login
-components/   AuthLayout, Campo, Pulsante, Header, Footer, Logo, Segnaposto, RiquadroDiscord; ctf/, eventi/, meeting/ per le sezioni
+components/   AuthLayout, Campo, Pulsante, Header, Footer, Logo, Segnaposto, RiquadroDiscord; ctf/, eventi/, meeting/, lezioni/ per le sezioni
+content/      lezioni/ in MDX (una cartella per modulo)
 auth/         AuthProvider + useAuth()
 config/       credenzialiTest.ts, sito.ts (voci menu e contatti), ctf.ts (limiti CTF Groups), links.ts (link esterni)
-data/         ctf-mock.ts, eventi-mock.ts, meeting-mock.ts (dati finti, da sostituire con Supabase)
+data/         ctf-mock.ts, eventi-mock.ts, meeting-mock.ts, lezioni-mock.ts (dati finti, da sostituire con Supabase)
 lib/          validazione.ts (regole dei campi, percorsoInterno contro gli open redirect)
 public/       loghi SVG
 ```

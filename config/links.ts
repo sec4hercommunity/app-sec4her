@@ -16,6 +16,9 @@ export const LINKS = {
   // Invito al server Discord della community (footer + riquadro "Unisciti alla community").
   discord: 'https://discord.gg/SOSTITUISCI',
 
+  // Canale Discord delle domande sulle lezioni (pulsante "Fai una domanda su Discord ↗" nelle Lezioni).
+  discordDomande: 'https://discord.com/channels/SOSTITUISCI',
+
   // Pagina di prenotazione Cal.com della call 1:1 (pagina /meeting).
   calcom: {
     call11: 'https://cal.com/SOSTITUISCI/call-1-1',

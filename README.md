@@ -35,12 +35,13 @@ Questo repository contiene la **web app** di Sec4Her. Oggi l'app ha:
 7. [La pagina Home](#7-la-pagina-home)
 8. [CTF Groups](#8-ctf-groups)
 9. [Eventi e Meeting](#9-eventi-e-meeting)
-10. [I loghi](#10-i-loghi)
-11. [Stile e colori del brand](#11-stile-e-colori-del-brand)
-12. [Come testare](#12-come-testare)
-13. [Come lavoriamo in due](#13-come-lavoriamo-in-due)
-14. [Cronologia modifiche](#14-cronologia-modifiche)
-15. [Prossimi passi](#15-prossimi-passi)
+10. [Lezioni](#10-lezioni)
+11. [I loghi](#11-i-loghi)
+12. [Stile e colori del brand](#12-stile-e-colori-del-brand)
+13. [Come testare](#13-come-testare)
+14. [Come lavoriamo in due](#14-come-lavoriamo-in-due)
+15. [Cronologia modifiche](#15-cronologia-modifiche)
+16. [Prossimi passi](#16-prossimi-passi)
 
 ---
 
@@ -53,9 +54,10 @@ Questo repository contiene la **web app** di Sec4Her. Oggi l'app ha:
 | [TypeScript](https://www.typescriptlang.org) | 7 | JavaScript con i **tipi**: segnala molti errori prima ancora di aprire il browser. |
 | [Tailwind CSS](https://tailwindcss.com) | 4 | Permette di dare lo stile scrivendo classi direttamente nell'HTML (es. `bg-brand`, `font-mono`). |
 | [oxlint](https://oxc.rs) | 1 | Controlla il codice e segnala errori comuni (comando `npm run lint`). |
+| [MDX](https://mdxjs.com) (`@next/mdx`) | 3 | Markdown con componenti: il formato del testo delle lezioni (`content/lezioni/`), che arriva dalle note di Obsidian. |
 
-È lo **stack ufficiale** del progetto (vedi `docs/architettura.md`); più avanti si aggiungeranno Supabase, Stripe
-e MDX. Il codice è scritto in **TypeScript** (file `.ts`, e `.tsx` per i componenti React). Per ora non ci sono
+È lo **stack ufficiale** del progetto (vedi `docs/architettura.md`); più avanti si aggiungeranno Supabase e
+Stripe. Il codice è scritto in **TypeScript** (file `.ts`, e `.tsx` per i componenti React). Per ora non ci sono
 database: il login di test gira tutto nel browser.
 
 ---
@@ -167,7 +169,11 @@ app-sec4her/
 │       ├── meeting/            Meeting (sezione 9)
 │       │   ├── layout.tsx      Sfondo scuro
 │       │   └── page.tsx        Team e call 1:1 da prenotare su Cal.com (/meeting)
-│       └── [sezione]/page.tsx  Pagina segnaposto per le altre voci del menu (/about, /lezioni, …)
+│       ├── lezioni/            Lezioni (sezione 10)
+│       │   ├── layout.tsx      Stato condiviso (progressi, sessioni live) + sfondo scuro
+│       │   ├── page.tsx        Il percorso: mappa dei 7 moduli (/lezioni)
+│       │   └── [modulo]/       Pagina del modulo, e [lezione]/ la pagina della lezione
+│       └── [sezione]/page.tsx  Pagina segnaposto per le altre voci del menu (/about, /bug-bounty, …)
 ├── components/                 Pezzi riutilizzati dalle pagine
 │   ├── AuthLayout.tsx          Cornice di Accedi/Registrati: logo, slogan, card centrata
 │   ├── Campo.tsx               Campo di testo con etichetta e messaggio di errore
@@ -180,7 +186,10 @@ app-sec4her/
 │   ├── Segnaposto.tsx          Contenuto provvisorio delle pagine del menu
 │   ├── ctf/                    Pezzi della sezione CTF Groups (card, modali, badge, avatar…)
 │   ├── eventi/                 Pezzi della pagina Eventi (card, modale iscrizione, badge, icone…)
-│   └── meeting/                Pezzi della pagina Meeting (card del team e della call)
+│   ├── meeting/                Pezzi della pagina Meeting (card del team e della call)
+│   └── lezioni/                Pezzi delle Lezioni (mappa, sessione live, stati) e mdx/ (Callout, Schema, RichiestaHttp)
+├── content/
+│   └── lezioni/                ✍️ Testo delle lezioni in MDX, una cartella per modulo (sezione 10)
 ├── auth/
 │   ├── AuthProvider.tsx        Stato del login: accedi, esci, utente collegata
 │   └── contesto.ts             Hook useAuth() per leggere lo stato del login da qualsiasi pagina
@@ -192,14 +201,17 @@ app-sec4her/
 ├── data/
 │   ├── ctf-mock.ts             ⚠️ Dati FINTI dei CTF e dei gruppi (da sostituire con Supabase)
 │   ├── eventi-mock.ts          ⚠️ Dati FINTI degli eventi (da sostituire con Supabase)
-│   └── meeting-mock.ts         ⚠️ Dati FINTI di team e tipi di call (da sostituire con Supabase)
+│   ├── meeting-mock.ts         ⚠️ Dati FINTI di team e tipi di call (da sostituire con Supabase)
+│   └── lezioni-mock.ts         ⚠️ Dati FINTI: moduli, elenco lezioni, progressi, sessioni live
 ├── lib/
 │   ├── validazione.ts          Regole di controllo dei campi, testi degli errori, controllo dei redirect
 │   ├── ctf.ts                  Tipi e regole dei CTF: stato, conto alla rovescia, controlli dei moduli
 │   ├── eventi.ts               Tipi e regole degli eventi: temi, piattaforme, posti, conto alla rovescia, controlli
 │   ├── meeting.ts              Tipi della pagina Meeting (persona del team, tipo di call)
+│   ├── lezioni.ts              Tipi e regole delle Lezioni: stato di moduli e lezioni, proprietà dei file MDX
 │   └── ics.ts                  Crea il file .ics "Aggiungi al calendario" direttamente nel browser
-├── next.config.ts              Configurazione di Next.js
+├── mdx-components.tsx          Stile del Markdown e componenti usabili nelle lezioni MDX
+├── next.config.ts              Configurazione di Next.js (attiva MDX)
 ├── postcss.config.mjs          Collega Tailwind a Next.js
 ├── tsconfig.json               Configurazione di TypeScript (es. `@/` = cartella principale negli import)
 ├── package.json                Nome del progetto, comandi e librerie usate
@@ -372,14 +384,14 @@ Ogni pagina riservata (Home e pagine del menu) ha tre parti, definite in `app/(r
 
 ### Il menu ☰
 
-Le voci sono definite in **`config/sito.ts`** (per aggiungerne una basta aggiungere una riga). **Eventi**,
-**Meeting** e **CTF Groups** hanno la loro pagina vera (sezioni 9 e 8); le altre portano a una **pagina segnaposto** (`app/(riservata)/[sezione]/page.tsx`, che usa `components/Segnaposto.tsx`) con lo stesso header e footer, il titolo della sezione e la scritta
+Le voci sono definite in **`config/sito.ts`** (per aggiungerne una basta aggiungere una riga). **Lezioni**, **Eventi**,
+**Meeting** e **CTF Groups** hanno la loro pagina vera (sezioni 10, 9 e 8); le altre portano a una **pagina segnaposto** (`app/(riservata)/[sezione]/page.tsx`, che usa `components/Segnaposto.tsx`) con lo stesso header e footer, il titolo della sezione e la scritta
 *"[in costruzione] Questa sezione arriverà presto."*
 
 | Voce | Indirizzo |
 | --- | --- |
 | About us | `/about` |
-| Lezioni | `/lezioni` |
+| Lezioni | `/lezioni` (pagina vera, sezione 10) |
 | Eventi | `/eventi` (pagina vera, sezione 9) |
 | Meeting | `/meeting` (pagina vera, sezione 9) |
 | CTF Groups | `/ctf` (pagina vera, sezione 8) |
@@ -569,8 +581,9 @@ contengono la parola **`SOSTITUISCI`**: prima di pubblicare il sito vanno cambia
 | Chiave | Dove si vede | Cosa metterci |
 | --- | --- | --- |
 | `discord` | Footer, riquadro "Unisciti alla community" (Eventi e Meeting) | Link di invito al server Discord (es. `https://discord.gg/abc123`) |
+| `discordDomande` | Lezioni → "Fai una domanda su Discord ↗" | Link al canale Discord delle domande sulle lezioni |
 | `calcom.call11` | Meeting → Call 1:1 | Pagina Cal.com della call 1:1 |
-| `callEventi.zoom` / `.meet` / `.discord` | Eventi → "Entra nella call ↗" degli eventi online | Link della call per piattaforma (con Supabase: un link per evento) |
+| `callEventi.zoom` / `.meet` / `.discord` | Eventi e sessioni live delle Lezioni → "Entra nella call ↗" | Link della call per piattaforma (con Supabase: un link per evento) |
 
 Tutti i link esterni si aprono in una **nuova scheda** con `rel="noopener noreferrer"`: gli attributi sono in
 `LINK_ESTERNO`, nello stesso file.
@@ -607,7 +620,188 @@ nel mese corrente (quando possibile) e ci sono sempre eventi futuri e passati.
 
 ---
 
-## 10. I loghi
+## 10. Lezioni
+
+La sezione **Lezioni** (`/lezioni`) è la parte grafica del percorso formativo descritto in
+`docs/struttura-corsi.md`: **solo grafica**, niente backend. L'elenco dei moduli e delle lezioni, i progressi
+dell'utente di prova e le sessioni live sono **dati finti** in **`data/lezioni-mock.ts`**, gestiti con lo stato
+React. Il **testo** delle lezioni invece è vero contenuto in **MDX**, nella cartella **`content/lezioni/`**, perché
+le note arriveranno da **Obsidian**.
+
+> ⚠️ Progressi e iscrizioni restano nella memoria del browser: **ricaricando la pagina** si torna alla
+> situazione iniziale. Spostandosi tra percorso, moduli e lezioni con i link del sito, invece, restano.
+
+### Il percorso (`/lezioni`)
+
+- Titolo **"Il percorso"** e la frase *"Da zero, hands-first, mai da sole."*
+- In alto il riquadro **"Prossima sessione live"** (vedi sotto).
+- La **mappa dei 7 moduli** collegati da una linea: orizzontale su computer, **verticale su telefono**.
+  1 Basi di rete e web · 2 Vulnerabilità web (OWASP Top 10) · 3 Lab pratici · 4 CTF di gruppo · 5 Bug bounty ·
+  6 Lab nostro · 7 Eventi a tema.
+- Lo **stato** di ogni modulo:
+
+| Stato | Aspetto | Quando |
+| --- | --- | --- |
+| ✓ Completato | verde | tutte le lezioni del modulo sono completate |
+| ▶ In corso | viola, con bagliore | il modulo è aperto e mancano lezioni |
+| 🔒 Prossimamente | grigio, non cliccabile | il modulo non è ancora aperto (`aperto: false`) |
+
+  Oggi sono aperti solo i moduli 1 e 2.
+- La **barra di avanzamento** generale: *"2/8 lezioni completate"*.
+
+### La pagina del modulo (`/lezioni/[modulo]`)
+
+Descrizione e approccio del modulo ed elenco delle lezioni con **stato** (✓ Completata, ▶ Prossima, Da fare) e
+**durata**. Accanto, la sessione live del modulo. I moduli chiusi mostrano solo *"Prossimamente"*.
+
+- **Modulo 1:** Come parla il web: richieste e risposte · Il browser sotto la lente · **Intercettiamo un login
+  con Caido**.
+- **Modulo 2:** OWASP Top 10: la mappa · XSS · SQL injection · IDOR · Autenticazione rotta.
+
+### La pagina della lezione (`/lezioni/[modulo]/[lezione]`)
+
+Struttura fissa, ispirata al modello della prima sessione (`docs/struttura-corsi.md`, sezione 3):
+
+1. **Il filo**: la frase chiave, in evidenza.
+2. **Contenuto**: il file MDX, con i componenti `Callout`, `Schema`, `Flusso` e il blocco **richiesta HTTP**
+   stile terminale.
+3. **Lab**: pulsante "Apri il lab ↗" (si apre in una nuova scheda) e **"Domande da farti"**. **Niente soluzioni
+   pronte**: insegniamo il ragionamento da pentester.
+4. **Bottino**: 3 punti su cosa hai capito.
+5. **Compito**.
+6. Pulsante **"Segna come completata"**: aggiorna subito lo stato nel percorso (mappa, modulo e barra). Si può
+   tornare indietro con "Segna come da fare".
+7. **Prossima lezione**, con l'anteprima.
+
+Di lato (sotto, su telefono) c'è la sessione live della lezione. La lezione completa di esempio è
+**"Intercettiamo un login con Caido"**. Le lezioni che non hanno ancora un file MDX mostrano *"Le note di questa
+lezione sono in preparazione"*.
+
+### Sessioni live
+
+In alto su `/lezioni` (la prossima in programma) e in ogni modulo e lezione (quella collegata, se c'è; altrimenti
+la prossima). Funzionano **esattamente come gli eventi**, riusando gli stessi componenti
+(`components/eventi/`):
+
+- data e ora, durata, piattaforma (Zoom / Google Meet / Discord), **numero di iscritte (mai i nomi)**;
+- **"Prenota il posto"** → modale con nome e cognome già compilati → *"Sei iscritta! ✓"*;
+- poi **"Iscritta ✓"**, "Annulla iscrizione", il **link alla call** (visibile solo dopo l'iscrizione) e
+  **"Aggiungi al calendario"** (file `.ics`);
+- **"Fai una domanda su Discord ↗"** porta al canale delle domande (`discordDomande` in `config/links.ts`).
+
+Le sessioni sono in `SESSIONI_LIVE` (`data/lezioni-mock.ts`): una a settimana, con le date calcolate rispetto ad
+"adesso", così sono sempre nel futuro.
+
+### Come aggiungere una nuova lezione in MDX (da Obsidian)
+
+**MDX** è Markdown (lo stesso di Obsidian) con in più la possibilità di usare dei componenti, come `<Callout>`.
+Una nota di Obsidian diventa una lezione così:
+
+1. **Scegli il modulo** e la sua cartella: `content/lezioni/basi-rete-web/`, `content/lezioni/vulnerabilita-web/`, …
+   (il nome della cartella è lo `slug` del modulo in `data/lezioni-mock.ts`).
+2. **Crea il file** `nome-della-lezione.mdx`: minuscole, parole separate da trattini, senza accenti
+   (es. `sql-injection.mdx`). Puoi copiare la nota da Obsidian e cambiare l'estensione da `.md` a `.mdx`.
+3. **Scrivi le proprietà in cima al file**, tra due righe `---`. In Obsidian sono le **Proprietà** della nota, quindi
+   puoi compilarle direttamente lì:
+
+   ```yaml
+   ---
+   filo: Il web è uno scambio di messaggi. Oggi ci mettiamo in mezzo.
+   lab: "PortSwigger · Nome del lab"
+   lab_link: https://portswigger.net/web-security/...
+   domande:
+     - Prima domanda da farsi davanti al target?
+     - Seconda domanda?
+   bottino:
+     - Primo punto da portarsi a casa.
+     - Secondo punto.
+     - Terzo punto.
+   compito: Cosa fare prima della prossima lezione.
+   prossima: Anteprima della lezione successiva.
+   ---
+   ```
+
+   Sono tutte facoltative: se ne manca una, quella parte della pagina non compare. `lab_link` deve iniziare con
+   `https://`, altrimenti viene ignorato. **Nelle domande niente soluzioni.**
+4. **Scrivi il contenuto** sotto le proprietà, in Markdown normale: titoli `##`, elenchi, **grassetto**, link,
+   tabelle. Puoi usare questi componenti senza importarli:
+
+   | Cosa | Come si scrive |
+   | --- | --- |
+   | Riquadro nota / attenzione / suggerimento | `<Callout tipo="nota">Testo</Callout>` (anche `tipo="attenzione"`, `tipo="suggerimento"` e `titolo="..."`) |
+   | Riquadro per schemi e diagrammi | `<Schema titolo="Chi legge le lettere" didascalia="...">...</Schema>` |
+   | Passi collegati da frecce | `<Flusso passi="Browser, Caido, Server" evidenzia="Caido" />` |
+   | Richiesta o risposta HTTP stile terminale | un blocco di codice con la lingua `http` (vedi sotto) |
+
+   ````md
+   ```http
+   POST /login HTTP/1.1
+   Host: lab.esempio.it
+
+   username=anna&password===segreta==
+   ```
+   ````
+
+   Metodo, header e status code vengono colorati da soli. Le parti scritte tra `==uguali==` (l'evidenziatore di
+   Obsidian) vengono evidenziate.
+5. **Aggiungi la lezione all'elenco** in `data/lezioni-mock.ts`, nell'array `lezioni` del modulo, con lo stesso
+   `slug` del nome del file:
+
+   ```ts
+   { slug: 'sql-injection', titolo: 'SQL injection', durataMinuti: 55, descrizione: 'Frase breve per l’elenco.' },
+   ```
+6. **Controlla**: `npm run dev` e apri la lezione dal percorso. Prima della PR, `npm run build` (un errore di
+   scrittura nell'MDX blocca la build e indica la riga).
+
+**Differenze da Obsidian da sistemare quando copi una nota:**
+
+| In Obsidian | Nella lezione MDX |
+| --- | --- |
+| `> [!note]`, `> [!warning]`, `> [!tip]` | `<Callout tipo="nota">`, `<Callout tipo="attenzione">`, `<Callout tipo="suggerimento">` |
+| `[[Altra nota]]` (link interni) | `[testo](/lezioni/modulo/lezione)` |
+| `![[immagine.png]]` | per ora niente immagini: usa `<Schema>` e `<Flusso>` |
+| `==evidenziato==` nel testo | `**grassetto**` (l'evidenziatore funziona solo nei blocchi `http`) |
+| `{` e `<` nel testo | vanno nei blocchi di codice, o scritti come `` `{` `` (in MDX hanno un significato speciale) |
+
+> 🔒 **Sicurezza.** Un file MDX è **codice** che gira nel sito: le lezioni le scrivono solo founder e co-founder, e
+> arrivano su `main` tramite PR revisionata. Le note delle socie (la futura "zona condivisione") non dovranno mai
+> diventare file MDX: andranno salvate come testo semplice. I bug reali trovati in bug bounty **non vanno mai**
+> nelle lezioni: solo il metodo, mai il target o il dettaglio del bug (`docs/struttura-corsi.md`, sezione 4).
+
+### I file
+
+| File | Cosa contiene |
+| --- | --- |
+| `app/(riservata)/lezioni/layout.tsx` | Stato condiviso tra le pagine + sfondo scuro |
+| `app/(riservata)/lezioni/page.tsx` | Il percorso: sessione live, mappa dei moduli, barra di avanzamento |
+| `app/(riservata)/lezioni/[modulo]/page.tsx` | Pagina del modulo |
+| `app/(riservata)/lezioni/[modulo]/[lezione]/page.tsx` | Pagina della lezione: carica il file MDX e le sue proprietà |
+| `content/lezioni/<modulo>/<lezione>.mdx` | ✍️ **Testo delle lezioni** (oggi: `basi-rete-web/intercettiamo-un-login-con-caido.mdx`) |
+| `mdx-components.tsx` | Stile del Markdown e componenti usabili nelle lezioni senza importarli |
+| `components/lezioni/mdx/` | `Callout`, `Schema` + `Flusso`, `RichiestaHttp` |
+| `components/lezioni/LezioniProvider.tsx` | Lo **stato**: lezioni completate e iscrizioni alle sessioni (usa `useEventi`) |
+| `components/lezioni/MappaPercorso.tsx`, `BarraAvanzamento.tsx`, `ElencoLezioni.tsx`, `Stato.tsx` | Mappa, barra, elenco lezioni, badge e cerchi di stato |
+| `components/lezioni/RiquadroSessione.tsx`, `StatoLezioneClient.tsx` | Sessione live + Discord, "Segna come completata" |
+| `lib/lezioni.ts` | Tipi e regole: stato di moduli e lezioni, lezione successiva, lettura sicura delle proprietà |
+| `data/lezioni-mock.ts` | ⚠️ **Dati finti**: 7 moduli, 8 lezioni, 2 già completate, 3 sessioni live |
+| `next.config.ts` | Attiva MDX (`@next/mdx`) con i plugin per tabelle e proprietà |
+
+Per il riuso, ai componenti degli Eventi sono state aggiunte solo delle opzioni facoltative, che non cambiano la
+pagina Eventi: `useEventi(iniziali)`, `testoPulsante` in `AzioniIscrizione` e `titolo` in `ModaleIscrizione`.
+
+### Integrazione futura con Supabase
+
+- **Progressi**: una tabella "lezioni completate" (utente, lezione) al posto di `COMPLETATE_INIZIALI`, con Row Level
+  Security: ognuna vede solo i propri progressi.
+- **Sessioni live**: come gli eventi (tabelle per sessioni e iscrizioni, posti controllati sul server, link della
+  call dato solo a chi è iscritta).
+- **Contenuti**: i file MDX restano nel repository (si pubblicano con una PR). Moduli ed elenco delle lezioni
+  possono restare in `data/lezioni-mock.ts` o passare in una tabella.
+- **Lezioni riservate** ai membri (Fase 2-3): il controllo andrà fatto **sul server**, non solo nel browser.
+
+---
+
+## 11. I loghi
 
 Tutti i loghi sono in `public/` e sono file **SVG** (immagini vettoriali: restano nitide a ogni dimensione).
 
@@ -632,7 +826,7 @@ e, se l'immagine non si carica, mostra al suo posto la scritta **sec4her**:
 
 ---
 
-## 11. Stile e colori del brand
+## 12. Stile e colori del brand
 
 I colori sono definiti una sola volta in `app/globals.css` e si usano come classi Tailwind:
 
@@ -669,7 +863,7 @@ Altri dettagli:
 
 ---
 
-## 12. Come testare
+## 13. Come testare
 
 Avvia l'app con `npm run dev` e apri http://localhost:3000.
 
@@ -748,6 +942,21 @@ Avvia l'app con `npm run dev` e apri http://localhost:3000.
 - [ ] **Lezioni** – sotto la card, il riquadro "Vuoi imparare in gruppo?…" porta a `/lezioni` nella stessa scheda.
 - [ ] **Discord** – riquadro "Unisciti alla community" anche in fondo a questa pagina.
 
+**Lezioni** (dal menu ☰ → Lezioni, oppure http://localhost:3000/lezioni)
+
+- [ ] **Percorso** – titolo "Il percorso", 7 moduli collegati da una linea: 1 e 2 "▶ In corso" (viola, con bagliore),
+      3-7 "🔒 Prossimamente" (grigi, non cliccabili). Barra "2/8 lezioni completate".
+- [ ] **Sessione live** – riquadro in alto con data, durata, Zoom e "14 iscritte". "Prenota il posto" → conferma →
+      "Sei iscritta! ✓", poi "Iscritta ✓", 15 iscritte, "Entra nella call ↗" e "Aggiungi al calendario" (.ics).
+      "Annulla iscrizione" → si torna a 14 e il link sparisce. "Fai una domanda su Discord ↗" si apre in una nuova scheda.
+- [ ] **Modulo** – clicca il modulo 1: 3 lezioni, 2 "✓ Completata" e "Intercettiamo un login con Caido" "▶ Prossima".
+- [ ] **Lezione** – apri la lezione Caido: il filo, schema, callout, blocchi richiesta/risposta HTTP, tabella, Lab
+      con "Apri il lab ↗" e 4 domande, Bottino (3 punti), Compito, Prossima lezione.
+- [ ] **Completata** – "Segna come completata" → "Completata ✓"; torna al percorso con i link: "3/8 lezioni
+      completate" e il modulo 1 diventa "✓ Completato" (verde).
+- [ ] **Lezione senza testo** – "OWASP Top 10: la mappa" mostra "Le note di questa lezione sono in preparazione".
+- [ ] **Telefono** – la mappa diventa verticale e nessuna pagina scorre in orizzontale.
+
 **Vista da telefono**
 
 - [ ] Nel browser premi **F12**, poi l'icona del telefono (*Toggle device toolbar*, oppure `Ctrl + Shift + M`).
@@ -760,7 +969,7 @@ Avvia l'app con `npm run dev` e apri http://localhost:3000.
 
 ---
 
-## 13. Come lavoriamo in due
+## 14. Come lavoriamo in due
 
 Lavoriamo **ognuna sul proprio branch** e uniamo le modifiche su `main` solo tramite **pull request**.
 Non si fanno commit direttamente su `main`.
@@ -806,7 +1015,7 @@ clicca **"Merge pull request"**. Dopo il merge, entrambe tornano su `main` e fan
 
 ---
 
-## 14. Cronologia modifiche
+## 15. Cronologia modifiche
 
 Branch `login`:
 
@@ -852,9 +1061,16 @@ Branch `eventi-meeting` (parte da `eventi`):
     dati in `data/meeting-mock.ts`); `/eventi` senza schede. Riquadro Discord condiviso in fondo alle due pagine;
     attributi dei link esterni in `LINK_ESTERNO` (`config/links.ts`).
 
+Branch `lezioni` (parte da `eventi-meeting`):
+
+14. **Lezioni** – pagina `/lezioni` con il percorso in 7 moduli (mappa, stati, barra di avanzamento), pagine dei
+    moduli e delle lezioni, lezione di esempio completa in **MDX** ("Intercettiamo un login con Caido") con
+    `Callout`, `Schema`, `Flusso` e blocco richiesta HTTP; sessioni live con la stessa iscrizione degli eventi e
+    pulsante Discord. Dati finti in `data/lezioni-mock.ts`, testi in `content/lezioni/`.
+
 ---
 
-## 15. Prossimi passi
+## 16. Prossimi passi
 
 - **Database vero per gli account**, ad esempio **Supabase** (quello previsto nel documento di architettura:
   database PostgreSQL con login già pronto) oppure **Firebase**: registrazione che salva davvero e login vero.
@@ -864,8 +1080,10 @@ Branch `eventi-meeting` (parte da `eventi`):
   `data/meeting-mock.ts`.
 - **Eventi su Supabase**: tabelle per eventi e iscrizioni al posto di `data/eventi-mock.ts`; posti e "un'iscrizione
   per persona" controllati **sul server**; link della call restituito solo a chi è iscritta (Row Level Security).
-- **Contenuti reali delle pagine del menu**: About us, Lezioni, Bug Bounty Group,
+- **Contenuti reali delle pagine del menu**: About us, Bug Bounty Group,
   Contact us (oggi sono segnaposto).
+- **Testi delle altre lezioni** in `content/lezioni/` (dalle note di Obsidian, vedi sezione 10) e **progressi e
+  sessioni live su Supabase**.
 - **CTF Groups su Supabase**: tabelle per CTF, gruppi e membri al posto di `data/ctf-mock.ts`, con le regole
   (5 gruppi, 5 membri, un gruppo per CTF) controllate anche **sul server** e Row Level Security.
 - **Contatti reali** nel footer (`config/sito.ts`) e **testo definitivo** della presentazione in Home.
@@ -875,5 +1093,5 @@ Branch `eventi-meeting` (parte da `eventi`):
 - **Test automatici** per le regole di `validazione.ts` e per il login: oggi si prova tutto a mano.
 - **Unire i branch su `main`** tramite pull request (prima `login`, poi `home`).
 - **Protezione delle pagine sul server** (middleware di Next.js) quando arriva Supabase.
-- Le altre parti previste nei PDF del progetto: **landing page pubblica**, **note e lezioni** in MDX,
+- Le altre parti previste nei PDF del progetto: **landing page pubblica**, **note pubbliche** in MDX,
   **membership** con Stripe e collegamento a **Discord**.
