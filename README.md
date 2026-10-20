@@ -166,7 +166,7 @@ app-sec4her/
 │       │   └── page.tsx        Evento del mese, prossimi eventi, eventi passati (/eventi)
 │       ├── meeting/            Meeting (sezione 9)
 │       │   ├── layout.tsx      Sfondo scuro
-│       │   └── page.tsx        Team e tipi di call da prenotare su Cal.com (/meeting)
+│       │   └── page.tsx        Team e call 1:1 da prenotare su Cal.com (/meeting)
 │       └── [sezione]/page.tsx  Pagina segnaposto per le altre voci del menu (/about, /lezioni, …)
 ├── components/                 Pezzi riutilizzati dalle pagine
 │   ├── AuthLayout.tsx          Cornice di Accedi/Registrati: logo, slogan, card centrata
@@ -180,7 +180,7 @@ app-sec4her/
 │   ├── Segnaposto.tsx          Contenuto provvisorio delle pagine del menu
 │   ├── ctf/                    Pezzi della sezione CTF Groups (card, modali, badge, avatar…)
 │   ├── eventi/                 Pezzi della pagina Eventi (card, modale iscrizione, badge, icone…)
-│   └── meeting/                Pezzi della pagina Meeting (card del team e dei tipi di call)
+│   └── meeting/                Pezzi della pagina Meeting (card del team e della call)
 ├── auth/
 │   ├── AuthProvider.tsx        Stato del login: accedi, esci, utente collegata
 │   └── contesto.ts             Hook useAuth() per leggere lo stato del login da qualsiasi pagina
@@ -553,16 +553,13 @@ accanto a Email e Instagram.
 - Titolo **Meeting** e testo: *"Bloccata su un lab? Un dubbio sulla lezione? Prenota una call con noi."*
 - Due card per **Founder** e **Co-founder**: cerchio con le iniziali (al posto della foto), **nome segnaposto**,
   ruolo e gli argomenti su cui aiutano. Si cambiano in `TEAM` in `data/meeting-mock.ts`.
-- **Due tipi di call**, ognuno con durata, piattaforma e pulsante **"Prenota su Cal.com ↗"**
-  (si cambiano in `TIPI_CALL` in `data/meeting-mock.ts`):
-
-| Call | Durata | Per chi | Piattaforma (esempio) |
-| --- | --- | --- | --- |
-| Call 1:1 | 20 min | Individuale | Google Meet |
-| Q&A di gruppo | 45 min | Fino a 5 persone | Zoom |
-
-Sotto: *"Scegli l'orario, ricevi la conferma via email con il link alla call."* Il sito **non ha un calendario**:
-la prenotazione avviene tutta su Cal.com.
+- **Prenota una call**: una sola card, centrata, con la **Call 1:1** (20 min, individuale, con Founder o
+  Co-founder, su Google Meet come esempio) e il pulsante **"Prenota su Cal.com ↗"**
+  (si cambia in `TIPI_CALL` in `data/meeting-mock.ts`).
+- Sotto: *"Scegli l'orario, ricevi la conferma via email con il link alla call."* Il sito **non ha un calendario**:
+  la prenotazione avviene tutta su Cal.com.
+- Un piccolo riquadro: *"Vuoi imparare in gruppo? Le sessioni live settimanali sono nella sezione Lezioni →"*, con
+  link a **`/lezioni`**: lo studio di gruppo sta lì, non nelle call del Meeting.
 
 ### I link esterni: `config/links.ts`
 
@@ -573,7 +570,6 @@ contengono la parola **`SOSTITUISCI`**: prima di pubblicare il sito vanno cambia
 | --- | --- | --- |
 | `discord` | Footer, riquadro "Unisciti alla community" (Eventi e Meeting) | Link di invito al server Discord (es. `https://discord.gg/abc123`) |
 | `calcom.call11` | Meeting → Call 1:1 | Pagina Cal.com della call 1:1 |
-| `calcom.qaGruppo` | Meeting → Q&A di gruppo | Pagina Cal.com del Q&A di gruppo |
 | `callEventi.zoom` / `.meet` / `.discord` | Eventi → "Entra nella call ↗" degli eventi online | Link della call per piattaforma (con Supabase: un link per evento) |
 
 Tutti i link esterni si aprono in una **nuova scheda** con `rel="noopener noreferrer"`: gli attributi sono in
@@ -584,12 +580,12 @@ Tutti i link esterni si aprono in una **nuova scheda** con `rel="noopener norefe
 | File | Cosa contiene |
 | --- | --- |
 | `app/(riservata)/eventi/page.tsx` | Pagina Eventi: evento del mese, filtri, griglie, modale |
-| `app/(riservata)/meeting/page.tsx` | Pagina Meeting: team e tipi di call |
+| `app/(riservata)/meeting/page.tsx` | Pagina Meeting: team, call 1:1 e riquadro verso Lezioni |
 | `components/eventi/useEventi.ts` | Lo **stato** degli eventi: iscrizioni, numero di iscritte, iscriviti/annulla |
 | `components/eventi/CardEventoMese.tsx`, `CardEvento.tsx` | Card dell'evento del mese e degli altri eventi |
 | `components/eventi/ModaleIscrizione.tsx`, `AzioniIscrizione.tsx` | Modale "Partecipo", pulsanti, link call, calendario |
 | `components/eventi/Badge.tsx`, `InfoEvento.tsx`, `Icone.tsx` | Badge, data/luogo/posti, icone di temi e piattaforme |
-| `components/meeting/CardTeam.tsx`, `CardTipoCall.tsx` | Card di Founder/Co-founder e dei tipi di call |
+| `components/meeting/CardTeam.tsx`, `CardTipoCall.tsx` | Card di Founder/Co-founder e della call |
 | `components/RiquadroDiscord.tsx`, `IconaDiscord.tsx` | Riquadro Discord e logo Discord |
 | `lib/eventi.ts`, `lib/meeting.ts`, `lib/ics.ts` | Tipi, regole e creazione del file `.ics` |
 | `data/eventi-mock.ts` | ⚠️ **Dati finti**: 6 eventi (4 in programma, 2 passati) |
@@ -747,8 +743,9 @@ Avvia l'app con `npm run dev` e apri http://localhost:3000.
 **Meeting** (dal menu ☰ → Meeting, oppure http://localhost:3000/meeting)
 
 - [ ] **Team** – due card (Founder e Co-founder) con iniziali, ruolo e argomenti.
-- [ ] **Tipi di call** – Call 1:1 (20 min), Q&A di gruppo (45 min), affiancate su computer e una sotto l'altra da telefono, ognuna con la
-      piattaforma e "Prenota su Cal.com ↗" (si apre in una nuova scheda; per ora è un link segnaposto).
+- [ ] **Prenota una call** – una sola card centrata, Call 1:1 (20 min) con la piattaforma e "Prenota su Cal.com ↗"
+      (si apre in una nuova scheda; per ora è un link segnaposto).
+- [ ] **Lezioni** – sotto la card, il riquadro "Vuoi imparare in gruppo?…" porta a `/lezioni` nella stessa scheda.
 - [ ] **Discord** – riquadro "Unisciti alla community" anche in fondo a questa pagina.
 
 **Vista da telefono**

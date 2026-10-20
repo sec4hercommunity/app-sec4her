@@ -16,10 +16,9 @@ export const LINKS = {
   // Invito al server Discord della community (footer + riquadro "Unisciti alla community").
   discord: 'https://discord.gg/SOSTITUISCI',
 
-  // Pagine di prenotazione Cal.com, una per tipo di call (pagina /meeting).
+  // Pagina di prenotazione Cal.com della call 1:1 (pagina /meeting).
   calcom: {
     call11: 'https://cal.com/SOSTITUISCI/call-1-1',
-    qaGruppo: 'https://cal.com/SOSTITUISCI/qa-di-gruppo',
   },
 
   // Link delle call per gli eventi online, per piattaforma. Visibili solo dopo l'iscrizione.

@@ -19,17 +19,8 @@ export const TIPI_CALL: TipoCall[] = [
     titolo: 'Call 1:1',
     durataMinuti: 20,
     descrizione: 'Bloccata su un lab o su un concetto? Lo guardiamo insieme.',
-    persone: 'Individuale',
+    persone: 'Individuale, con Founder o Co-founder',
     piattaforma: 'meet',
     linkPrenotazione: LINKS.calcom.call11,
-  },
-  {
-    id: 'qa-di-gruppo',
-    titolo: 'Q&A di gruppo',
-    durataMinuti: 45,
-    descrizione: 'Porta le tue domande: si risponde insieme e si impara anche da quelle delle altre.',
-    persone: 'Fino a 5 persone',
-    piattaforma: 'zoom',
-    linkPrenotazione: LINKS.calcom.qaGruppo,
   },
 ]

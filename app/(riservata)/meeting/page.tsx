@@ -1,3 +1,5 @@
+import Link from 'next/link'
+import { LINK } from '@/components/ctf/stili'
 import CardTeam from '@/components/meeting/CardTeam'
 import CardTipoCall from '@/components/meeting/CardTipoCall'
 import RiquadroDiscord from '@/components/RiquadroDiscord'
@@ -29,16 +31,23 @@ export default function PaginaMeeting() {
 
       <section aria-labelledby="titolo-tipi-call" className="mt-14">
         <h2 id="titolo-tipi-call" className="font-mono text-2xl font-bold text-text">
-          <span className="text-hack">&gt;</span> Tipi di call
+          <span className="text-hack">&gt;</span> Prenota una call
         </h2>
-        <div className="mx-auto mt-6 grid max-w-4xl gap-5 md:grid-cols-2">
+        <div className="mx-auto mt-6 max-w-xl">
           {TIPI_CALL.map((t) => (
             <CardTipoCall key={t.id} tipo={t} />
           ))}
+          <p className="mt-4 text-center font-mono text-sm text-text/60">
+            <span className="text-hack">&gt;</span> Scegli l&apos;orario, ricevi la conferma via email con il link alla call.
+          </p>
+          <aside className="mt-8 rounded-xl border border-dashed border-white/15 px-5 py-4 text-center text-sm text-text/80">
+            <strong className="text-text">Vuoi imparare in gruppo?</strong> Le sessioni live settimanali sono nella
+            sezione{' '}
+            <Link href="/lezioni" className={LINK}>
+              Lezioni →
+            </Link>
+          </aside>
         </div>
-        <p className="mt-6 font-mono text-sm text-text/60">
-          <span className="text-hack">&gt;</span> Scegli l&apos;orario, ricevi la conferma via email con il link alla call.
-        </p>
       </section>
 
       <div className="mt-16">
