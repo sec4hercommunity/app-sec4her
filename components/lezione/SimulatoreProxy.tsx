@@ -34,9 +34,51 @@ export function richiestaDiLogin(modello: string, username: string, password: st
   return `${testo.slice(0, vuota)}\n\n${body.toString()}`
 }
 
-type Risposta = { testo: string; tipo: 'ok' | 'scartata' }
+type TipoRisposta = 'user' | 'admin' | 'errore' | 'non-trovata' | 'scartata'
+type Risposta = { testo: string; tipo: TipoRisposta }
 
-export default function SimulatoreProxy({ sito = 'Sito finto', utenteDemo, richiesta, rispostaUser }: Props) {
+// Legge metodo, percorso e campi del body da una richiesta scritta a mano (anche modificata male).
+export function leggiRichiesta(testo: string): { metodo: string; percorso: string; campi: URLSearchParams } {
+  const pulito = testo.replace(/\r/g, '')
+  const [metodo = '', percorso = ''] = (pulito.split('\n')[0] ?? '').trim().split(/\s+/)
+  const vuota = pulito.indexOf('\n\n')
+  return { metodo, percorso, campi: new URLSearchParams(vuota === -1 ? '' : pulito.slice(vuota + 2).trim()) }
+}
+
+// Il "server" del sito finto: controlla le credenziali ma si FIDA del campo role mandato dal browser
+// (è proprio il bug che la lezione fa scoprire: Broken Access Control).
+export function rispostaServer(
+  testo: string,
+  utente: { username: string; password: string } | undefined,
+  risposte: { user: string; admin: string; errore: string },
+): Risposta {
+  const { metodo, percorso, campi } = leggiRichiesta(testo)
+  if (metodo.toUpperCase() !== 'POST' || percorso !== '/login') {
+    return { tipo: 'non-trovata', testo: 'HTTP/1.1 404 Not Found\n\n<h1>Pagina non trovata</h1>' }
+  }
+  const giuste = !!utente && campi.get('username') === utente.username && campi.get('password') === utente.password
+  if (!giuste) return { tipo: 'errore', testo: risposte.errore }
+  return campi.get('role')?.trim() === 'admin'
+    ? { tipo: 'admin', testo: risposte.admin }
+    : { tipo: 'user', testo: risposte.user }
+}
+
+// Il body HTML della risposta, trasformato in righe di testo (mai inserito come HTML vero nella pagina).
+function righePagina(testo: string): { tag: 'h1' | 'p'; testo: string }[] {
+  const pulito = testo.replace(/\r/g, '')
+  const vuota = pulito.indexOf('\n\n')
+  const html = vuota === -1 ? '' : pulito.slice(vuota + 2)
+  return [...html.matchAll(/<(h1|p)>([\s\S]*?)<\/\1>/g)].map((m) => ({ tag: m[1] as 'h1' | 'p', testo: m[2].trim() }))
+}
+
+export default function SimulatoreProxy({
+  sito = 'Sito finto',
+  utenteDemo,
+  richiesta,
+  rispostaUser,
+  rispostaAdmin,
+  rispostaErrore,
+}: Props) {
   const id = useId()
   const [vista, setVista] = useState<Vista>('sito')
   const [username, setUsername] = useState('')
@@ -45,9 +87,13 @@ export default function SimulatoreProxy({ sito = 'Sito finto', utenteDemo, richi
   const [ferma, setFerma] = useState<string | null>(null) // richiesta bloccata nel proxy (modificabile)
   const [risposta, setRisposta] = useState<Risposta | null>(null)
 
-  // Il "server" del sito finto.
-  function server(_testo: string): Risposta {
-    return { testo: rispostaUser, tipo: 'ok' }
+  const server = (testo: string) =>
+    rispostaServer(testo, utenteDemo, { user: rispostaUser, admin: rispostaAdmin, errore: rispostaErrore })
+  const dentro = risposta?.tipo === 'user' || risposta?.tipo === 'admin'
+
+  function esci() {
+    setRisposta(null)
+    setPassword('')
   }
 
   function accedi(e: FormEvent) {
@@ -114,37 +160,67 @@ export default function SimulatoreProxy({ sito = 'Sito finto', utenteDemo, richi
           </div>
           <div className="flex flex-1 flex-col px-5 py-6 sm:px-7">
             <p className="font-mono text-lg font-bold text-text">📚 {sito}</p>
-            <form onSubmit={accedi} noValidate className="mt-5 space-y-4">
-              <div>
-                <label htmlFor={`${id}-utente`} className="block text-sm text-text/80">
-                  Username
-                </label>
-                <input
-                  id={`${id}-utente`}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 font-mono text-sm text-text outline-none focus:border-brand focus:ring-2 focus:ring-brand/40"
-                />
+            {dentro && risposta ? (
+              <div
+                data-pagina={risposta.tipo}
+                className={`mt-5 rounded-xl border px-5 py-5 ${risposta.tipo === 'admin' ? 'border-crimson bg-crimson/15' : 'border-hack/50 bg-hack/10'}`}
+              >
+                {righePagina(risposta.testo).map((r, i) =>
+                  r.tag === 'h1' ? (
+                    <p key={i} className="font-mono text-lg font-bold text-text">
+                      {r.testo}
+                    </p>
+                  ) : (
+                    <p key={i} className="mt-2 font-mono text-sm break-all text-text/90">
+                      {r.testo}
+                    </p>
+                  ),
+                )}
+                <button type="button" onClick={esci} className={`${PULSANTE_SECONDARIO} mt-5`}>
+                  Esci
+                </button>
               </div>
-              <div>
-                <label htmlFor={`${id}-password`} className="block text-sm text-text/80">
-                  Password
-                </label>
-                <input
-                  id={`${id}-password`}
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="off"
-                  className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 font-mono text-sm text-text outline-none focus:border-brand focus:ring-2 focus:ring-brand/40"
-                />
-              </div>
-              <button type="submit" className={`${PULSANTE_PRIMARIO} w-full`}>
-                Accedi
-              </button>
-            </form>
+            ) : (
+              <form onSubmit={accedi} noValidate className="mt-5 space-y-4">
+                <div>
+                  <label htmlFor={`${id}-utente`} className="block text-sm text-text/80">
+                    Username
+                  </label>
+                  <input
+                    id={`${id}-utente`}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 font-mono text-sm text-text outline-none focus:border-brand focus:ring-2 focus:ring-brand/40"
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`${id}-password`} className="block text-sm text-text/80">
+                    Password
+                  </label>
+                  <input
+                    id={`${id}-password`}
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="off"
+                    className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 font-mono text-sm text-text outline-none focus:border-brand focus:ring-2 focus:ring-brand/40"
+                  />
+                </div>
+                <button type="submit" className={`${PULSANTE_PRIMARIO} w-full`}>
+                  Accedi
+                </button>
+              </form>
+            )}
+            {(risposta?.tipo === 'errore' || risposta?.tipo === 'non-trovata') && (
+              <p
+                role="alert"
+                className="mt-5 rounded-lg border border-crimson bg-crimson/15 px-4 py-3 font-mono text-sm text-[#ff8fb0]"
+              >
+                ✗ {righePagina(risposta.testo)[0]?.testo ?? 'Errore'}
+              </p>
+            )}
             {ferma !== null && (
               <p
                 role="status"
