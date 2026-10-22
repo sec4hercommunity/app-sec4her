@@ -1,7 +1,7 @@
 'use client'
 
 import { useId, useState, type FormEvent } from 'react'
-import { PULSANTE_PRIMARIO } from '@/components/ctf/stili'
+import { PULSANTE_PRIMARIO, PULSANTE_SECONDARIO } from '@/components/ctf/stili'
 
 // Simulatore di proxy (stile Caido) per la lezione "Intercettiamo un login".
 // A sinistra un sito finto con form di login, a destra il proxy che sta in mezzo.
@@ -23,14 +23,54 @@ type Vista = 'sito' | 'proxy'
 
 const PANNELLO = 'min-w-0 flex-col rounded-2xl border bg-[#07070c]'
 
-export default function SimulatoreProxy({ sito = 'Sito finto', utenteDemo }: Props) {
+// Costruisce la richiesta di login partendo da quella dell'MDX: cambia solo username e password nel body.
+export function richiestaDiLogin(modello: string, username: string, password: string): string {
+  const testo = modello.replace(/\r/g, '')
+  const vuota = testo.indexOf('\n\n')
+  if (vuota === -1) return testo
+  const body = new URLSearchParams(testo.slice(vuota + 2).trim())
+  body.set('username', username)
+  body.set('password', password)
+  return `${testo.slice(0, vuota)}\n\n${body.toString()}`
+}
+
+type Risposta = { testo: string; tipo: 'ok' | 'scartata' }
+
+export default function SimulatoreProxy({ sito = 'Sito finto', utenteDemo, richiesta, rispostaUser }: Props) {
   const id = useId()
   const [vista, setVista] = useState<Vista>('sito')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [intercept, setIntercept] = useState(false)
+  const [ferma, setFerma] = useState<string | null>(null) // richiesta bloccata nel proxy (modificabile)
+  const [risposta, setRisposta] = useState<Risposta | null>(null)
+
+  // Il "server" del sito finto.
+  function server(_testo: string): Risposta {
+    return { testo: rispostaUser, tipo: 'ok' }
+  }
 
   function accedi(e: FormEvent) {
     e.preventDefault()
+    const testo = richiestaDiLogin(richiesta, username, password)
+    setRisposta(null)
+    if (intercept) {
+      setFerma(testo)
+      setVista('proxy')
+    } else {
+      setRisposta(server(testo))
+    }
+  }
+
+  function inoltra() {
+    if (ferma === null) return
+    setRisposta(server(ferma))
+    setFerma(null)
+  }
+
+  function scarta() {
+    setFerma(null)
+    setRisposta({ testo: '', tipo: 'scartata' })
   }
 
   return (
@@ -105,6 +145,22 @@ export default function SimulatoreProxy({ sito = 'Sito finto', utenteDemo }: Pro
                 Accedi
               </button>
             </form>
+            {ferma !== null && (
+              <p
+                role="status"
+                className="mt-5 rounded-lg border border-[#f0b35b]/50 bg-[#f0b35b]/10 px-4 py-3 font-mono text-sm text-[#f0b35b]"
+              >
+                ⏳ In attesa del server… la richiesta è ferma nel proxy.
+              </p>
+            )}
+            {risposta?.tipo === 'scartata' && (
+              <p
+                role="status"
+                className="mt-5 rounded-lg border border-white/15 bg-white/5 px-4 py-3 font-mono text-sm text-text/70"
+              >
+                🗑 Richiesta scartata: non è mai arrivata al server.
+              </p>
+            )}
             {utenteDemo && (
               <p className="mt-4 font-mono text-xs text-text/50">
                 Utente di prova: {utenteDemo.username} / {utenteDemo.password}
@@ -119,10 +175,72 @@ export default function SimulatoreProxy({ sito = 'Sito finto', utenteDemo }: Pro
           className={`${PANNELLO} border-brand/50 ${vista === 'proxy' ? 'flex' : 'hidden'} lg:flex`}
         >
           <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-2.5">
-            <p className="font-mono text-sm font-bold text-[#a98bff]">🕵️ Proxy · Intercept</p>
+            <p className="font-mono text-sm font-bold text-[#a98bff]">🕵️ Proxy</p>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={intercept}
+              onClick={() => setIntercept((v) => !v)}
+              className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-mono text-xs font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                intercept ? 'border-hack bg-hack/20 text-hack' : 'border-white/20 text-text/60'
+              }`}
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${intercept ? 'bg-hack motion-safe:animate-pulse' : 'bg-text/40'}`}
+                aria-hidden="true"
+              />
+              Intercept {intercept ? 'ON' : 'OFF'}
+            </button>
           </div>
-          <div className="flex flex-1 flex-col px-4 py-5">
-            <p className="font-mono text-sm text-text/50">Nessuna richiesta in coda.</p>
+          <div className="flex flex-1 flex-col gap-4 px-4 py-5">
+            {ferma !== null ? (
+              <div>
+                <label htmlFor={`${id}-editor`} className="font-mono text-xs font-bold tracking-[0.2em] text-[#f0b35b]">
+                  ✋ RICHIESTA INTERCETTATA · puoi modificarla
+                </label>
+                <textarea
+                  id={`${id}-editor`}
+                  value={ferma}
+                  onChange={(e) => setFerma(e.target.value)}
+                  rows={9}
+                  spellCheck={false}
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  className="mt-2 w-full resize-y rounded-xl border border-[#f0b35b]/50 bg-black/40 p-3 font-mono text-[13px] leading-relaxed text-text outline-none focus:border-brand focus:ring-2 focus:ring-brand/40"
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={inoltra} className={PULSANTE_PRIMARIO}>
+                    ▶ Forward
+                  </button>
+                  <button type="button" onClick={scarta} className={PULSANTE_SECONDARIO}>
+                    🗑 Drop
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="font-mono text-sm text-text/50">
+                {intercept
+                  ? 'Intercept attivo: la prossima richiesta del sito si fermerà qui.'
+                  : 'Intercept spento: le richieste passano dritte al server.'}
+              </p>
+            )}
+            {risposta && (
+              <div>
+                <p className="font-mono text-xs font-bold tracking-[0.2em] text-text/50">⬅ RISPOSTA DEL SERVER</p>
+                {risposta.tipo === 'scartata' ? (
+                  <p className="mt-2 rounded-xl border border-white/15 bg-white/5 p-3 font-mono text-sm text-text/70">
+                    Richiesta scartata: il server non l&apos;ha mai ricevuta.
+                  </p>
+                ) : (
+                  <pre
+                    data-risposta
+                    className="mt-2 overflow-x-auto rounded-xl border border-white/10 bg-black/40 p-3 font-mono text-[13px] leading-relaxed whitespace-pre-wrap text-text/85"
+                  >
+                    {risposta.testo}
+                  </pre>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
