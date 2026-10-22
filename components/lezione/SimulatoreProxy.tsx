@@ -2,6 +2,13 @@
 
 import { useId, useState, type FormEvent } from 'react'
 import { PULSANTE_PRIMARIO, PULSANTE_SECONDARIO } from '@/components/ctf/stili'
+import RichiestaCliccabile, {
+  CHIAVI,
+  COLORI_PARTI,
+  NOMI_PARTI,
+  SPIEGAZIONI_BASE,
+  type ChiaveParte,
+} from '@/components/lezione/RichiestaCliccabile'
 
 // Simulatore di proxy (stile Caido) per la lezione "Intercettiamo un login".
 // A sinistra un sito finto con form di login, a destra il proxy che sta in mezzo.
@@ -86,6 +93,18 @@ export default function SimulatoreProxy({
   const [intercept, setIntercept] = useState(false)
   const [ferma, setFerma] = useState<string | null>(null) // richiesta bloccata nel proxy (modificabile)
   const [risposta, setRisposta] = useState<Risposta | null>(null)
+  const [modo, setModo] = useState<'spiega' | 'modifica'>('spiega')
+  const [parte, setParte] = useState<ChiaveParte | null>(null) // parte della richiesta di cui si legge la spiegazione
+  const [partiViste, setPartiViste] = useState<ReadonlySet<ChiaveParte>>(new Set())
+
+  function scegliParte(chiave: ChiaveParte) {
+    setParte(chiave)
+    setPartiViste((v) => new Set(v).add(chiave))
+  }
+
+  function modificaRichiesta(testo: string) {
+    setFerma(testo)
+  }
 
   const server = (testo: string) =>
     rispostaServer(testo, utenteDemo, { user: rispostaUser, admin: rispostaAdmin, errore: rispostaErrore })
@@ -271,19 +290,69 @@ export default function SimulatoreProxy({
           <div className="flex flex-1 flex-col gap-4 px-4 py-5">
             {ferma !== null ? (
               <div>
-                <label htmlFor={`${id}-editor`} className="font-mono text-xs font-bold tracking-[0.2em] text-[#f0b35b]">
-                  ✋ RICHIESTA INTERCETTATA · puoi modificarla
-                </label>
-                <textarea
-                  id={`${id}-editor`}
-                  value={ferma}
-                  onChange={(e) => setFerma(e.target.value)}
-                  rows={9}
-                  spellCheck={false}
-                  autoCapitalize="off"
-                  autoCorrect="off"
-                  className="mt-2 w-full resize-y rounded-xl border border-[#f0b35b]/50 bg-black/40 p-3 font-mono text-[13px] leading-relaxed text-text outline-none focus:border-brand focus:ring-2 focus:ring-brand/40"
-                />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-mono text-xs font-bold tracking-[0.2em] text-[#f0b35b]">
+                    ✋ RICHIESTA INTERCETTATA
+                  </p>
+                  <div className="flex gap-1" role="group" aria-label="Cosa vuoi fare con la richiesta">
+                    {(['spiega', 'modifica'] as const).map((m) => (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setModo(m)}
+                        aria-pressed={modo === m}
+                        className={`cursor-pointer rounded-md border px-2.5 py-1 font-mono text-xs font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
+                          modo === m
+                            ? 'border-[#f0b35b] bg-[#f0b35b]/15 text-[#f0b35b]'
+                            : 'border-white/15 text-text/60'
+                        }`}
+                      >
+                        {m === 'spiega' ? '👁 Spiega' : '✏️ Modifica'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {modo === 'modifica' ? (
+                  <>
+                    <label htmlFor={`${id}-editor`} className="mt-2 block text-xs text-text/60">
+                      Scrivi direttamente nella richiesta, poi premi Forward.
+                    </label>
+                    <textarea
+                      id={`${id}-editor`}
+                      value={ferma}
+                      onChange={(e) => modificaRichiesta(e.target.value)}
+                      rows={9}
+                      spellCheck={false}
+                      autoCapitalize="off"
+                      autoCorrect="off"
+                      className="mt-2 w-full resize-y rounded-xl border border-[#f0b35b]/50 bg-black/40 p-3 font-mono text-[13px] leading-relaxed text-text outline-none focus:border-brand focus:ring-2 focus:ring-brand/40"
+                    />
+                  </>
+                ) : (
+                  <div className="mt-2">
+                    <RichiestaCliccabile testo={ferma} attiva={parte} onScegli={scegliParte} />
+                    <p
+                      data-spiegazione
+                      aria-live="polite"
+                      className={`mt-2 min-h-14 rounded-xl border px-4 py-3 text-sm ${
+                        parte ? `${COLORI_PARTI[parte].bordo} bg-white/[0.04]` : 'border-dashed border-white/15'
+                      }`}
+                    >
+                      {parte ? (
+                        <>
+                          <span className={`font-mono font-bold ${COLORI_PARTI[parte].testo}`}>
+                            {NOMI_PARTI[parte]}
+                          </span>
+                          <span className="mt-1 block text-text/85">{SPIEGAZIONI_BASE[parte]}</span>
+                        </>
+                      ) : (
+                        <span className="font-mono text-text/50">
+                          👆 Tocca metodo, URL, header e body per capire cosa sono ({partiViste.size}/{CHIAVI.length}).
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button type="button" onClick={inoltra} className={PULSANTE_PRIMARIO}>
                     ▶ Forward
