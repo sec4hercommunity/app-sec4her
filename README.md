@@ -661,8 +661,25 @@ frontmatter (`sessioneLive`), con "Prenota il posto". Funziona come gli eventi: 
 link alla call solo dopo l'iscrizione, file `.ics` e solo il numero di iscritte. Accanto c'è "Fai una domanda su
 Discord ↗" (`discordDomande` in `config/links.ts`).
 
-> 🛠 Il **SimulatoreProxy** della lezione 2 (sito finto + proxy stile Caido) **non è ancora stato fatto**: al suo
-> posto c'è il riquadro "Simulatore in arrivo". Per questo la flag non si trova ancora dentro il sito.
+### Il simulatore proxy (lezione 2)
+
+`SimulatoreProxy` mette affiancati un **sito finto** ("Biblioteca Bug", con il form di login) e un **proxy stile
+Caido**. Su telefono i due pannelli diventano le schede **Sito / Proxy**. Tutto succede nel browser: nessuna richiesta
+parte davvero, il "server" è una funzione in `components/lezione/SimulatoreProxy.tsx` (`rispostaServer`).
+
+- **Intercept ON/OFF** – con OFF la richiesta del login passa dritta; con ON si ferma nel proxy.
+- **Richiesta ferma** – 👁 *Spiega*: cliccando metodo, URL, header e body compare la spiegazione (stessa grafica di
+  `LetteraHTTP`); ✏️ *Modifica*: la richiesta si scrive a mano. Poi **▶ Forward** (la manda) o **🗑 Drop** (la scarta:
+  "Richiesta scartata").
+- **Risposte** – credenziali giuste + `role=user` → `rispostaUser`; credenziali giuste + `role=admin` →
+  `rispostaAdmin` (con la flag); credenziali sbagliate → `rispostaErrore`; URL diverso da `POST /login` → 404.
+  Il sito mostra il testo della risposta (mai come HTML vero).
+- **Checklist della missione** – i `passi` del frontmatter si spuntano da soli se hanno questi `id`: `intercept`,
+  `login`, `leggi` (tutte e 4 le parti cliccate), `inoltra`, `modifica` (`role=admin` nella richiesta), `flag`.
+- **Flag trovata** – riquadro animato con "📋 Copia la flag" e "Vai alla prova ↓".
+
+> ⚠️ È un bug **voluto** e finto (Broken Access Control): il server del simulatore si fida del campo `role`. La flag
+> sta nel file MDX, quindi nel browser: in produzione va verificata lato server.
 
 ### Il frontmatter di una lezione
 
@@ -729,7 +746,7 @@ componenti può usare Markdown normale (grassetto, elenchi, `codice`).
 | `StatusCodes` | Carte che si girano al click (`colore`: verde, viola, cremisi, grigio) | `<StatusCodes codici={[{ codice: 200, significato: "Ok", colore: "verde" }]} />` |
 | `CartolinaVsBusta` | Interruttore HTTP/HTTPS: in chiaro o cifrato con il lucchetto | `<CartolinaVsBusta messaggio="username=giulia&password=segreta123" />` |
 | `ViaggioCompleto` | ▶ anima i passi uno alla volta, con avanti/indietro | `<ViaggioCompleto passi={["Digiti sito.com", "Il DNS trova l'IP"]} />` |
-| `SimulatoreProxy` | 🛠 Per ora solo il riquadro "Simulatore in arrivo" | (le proprietà scritte nella lezione 2 sono accettate) |
+| `SimulatoreProxy` | Sito finto + proxy stile Caido: intercetta, spiega, modifica, Forward/Drop, checklist e flag (vedi sopra) | ``<SimulatoreProxy sito="Biblioteca Bug" utenteDemo={{ username: "giulia", password: "libri2026" }} passi={[{ id: "intercept", istruzione: "…" }]} richiesta={`POST /login …`} rispostaUser={`…`} rispostaAdmin={`…`} rispostaErrore={`…`} />`` |
 
 Restano disponibili anche `Callout` (`<Callout tipo="nota">…</Callout>`), `Schema`, `Flusso` e il blocco di codice con
 la lingua `http`, che mostra una richiesta o una risposta in stile terminale.
@@ -928,8 +945,11 @@ Avvia l'app con `npm run dev` e apri http://localhost:3000.
       HTTP/HTTPS, ▶ del viaggio completo, check rapido, "Non ti serve ora".
 - [ ] **Quiz** – sbaglia apposta → "ne servono almeno 4" e le spiegazioni; "Riprova" e rispondi bene → "Quiz
       superato", +50 XP, e "Sbloccata: Intercettiamo un login →".
-- [ ] **Lezione 2** – si apre; al posto del simulatore c'è "Simulatore in arrivo". Flag sbagliata → errore e
-      suggerimento; flag `sec4her{ho_cambiato_la_lettera}` → "Flag corretta!".
+- [ ] **Lezione 2 · simulatore** – Intercept OFF e password sbagliata → errore 401. Intercept ON, login con
+      giulia / libri2026 → la richiesta si ferma nel proxy; clicca metodo, URL, header e body (spiegazioni);
+      Drop → "Richiesta scartata"; rifai il login e Forward → "Ciao giulia!"; rifai il login, ✏️ Modifica,
+      `role=user` → `role=admin`, Forward → "🏴 Flag trovata!" e checklist 6/6.
+- [ ] **Lezione 2 · prova** – flag sbagliata → errore e suggerimento; "Copia la flag", incollala → "Flag corretta!".
 - [ ] **Percorso** – "2/7 lezioni completate", "⚡ 100 XP", modulo 1 "✓ Completato".
 - [ ] **Sessione live** – in fondo a ogni lezione: "Prenota il posto" → "Sei iscritta! ✓", link alla call e `.ics`.
 - [ ] **Telefono** – nessuna pagina scorre in orizzontale.
@@ -1047,7 +1067,11 @@ Branch `lezioni` (parte da `eventi-meeting`):
 
 15. **Lezioni vere del modulo 1** – le lezioni arrivano dai file MDX in `content/lezioni/01-basi-rete-web/` (frontmatter
     con titolo, durata, XP, prova, prossima lezione, sessione live). Nuovi componenti MDX in `components/lezione/`,
-    quiz e flag, lucchetti tra le lezioni e XP. Il simulatore proxy della lezione 2 è ancora da fare.
+    quiz e flag, lucchetti tra le lezioni e XP.
+
+16. **Simulatore proxy** – nella lezione 2 il `SimulatoreProxy` (sito finto "Biblioteca Bug" + proxy stile Caido):
+    Intercept ON/OFF, richiesta modificabile con Forward e Drop, spiegazioni cliccabili, risposte user/admin/errore,
+    checklist della missione con spunta automatica e animazione della flag. Funziona anche da telefono (schede).
 
 ---
 
