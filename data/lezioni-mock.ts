@@ -1,50 +1,32 @@
 // ⚠️ DATI FINTI per la sezione Lezioni ⚠️
 //
 // Servono solo a mostrare la grafica finché non c'è un database. Il percorso segue docs/struttura-corsi.md.
-// - MODULI: i 7 moduli e l'elenco delle lezioni (titolo, durata). Il TESTO di ogni lezione è un file MDX in
-//   content/lezioni/<modulo>/<lezione>.mdx (le note arrivano da Obsidian).
+// - MODULI_BASE: i 7 moduli. Le lezioni di un modulo arrivano dai file MDX nella sua cartella
+//   content/lezioni/<slug del modulo>/ (titolo, durata, xp, prova… dal frontmatter, vedi lib/catalogo.ts).
+//   Se la cartella non c'è, si usano le lezioni di esempio scritte qui ("note in preparazione").
 // - COMPLETATE_INIZIALI: le lezioni già completate dall'utente di prova.
 // - SESSIONI_LIVE: le sessioni live settimanali (si prenotano come gli eventi).
 // Progressi e iscrizioni fatti nel sito restano solo nella memoria del browser e spariscono ricaricando la pagina.
 // Con Supabase: progressi e sessioni dal database, l'elenco delle lezioni può restare qui o passare in una tabella.
 
 import { LINKS } from '@/config/links'
-import { idLezione, type Modulo, type SessioneLive } from '@/lib/lezioni'
+import type { Modulo, SessioneLive } from '@/lib/lezioni'
 
-export const MODULI: Modulo[] = [
+export const MODULI_BASE: Modulo[] = [
   {
     numero: 1,
-    slug: 'basi-rete-web',
+    slug: '01-basi-rete-web',
     titolo: 'Basi di rete e web',
     contenuto: 'Come funziona il web: protocolli, richieste e risposte HTTP, infrastruttura.',
     approccio: 'Schemi + esempi pratici. Obiettivo: capire, non memorizzare.',
     descrizione:
       'Il web è uno scambio di messaggi. Qui impariamo a leggerli: cosa chiede il browser, cosa risponde il server e come ci si mette in mezzo con un proxy. Niente teoria astratta: OSI, TCP/UDP e subnetting arrivano quando servono.',
     aperto: true,
-    lezioni: [
-      {
-        slug: 'come-parla-il-web',
-        titolo: 'Come parla il web: richieste e risposte',
-        durataMinuti: 40,
-        descrizione: 'Browser e server si scambiano lettere: metodo, URL, header, body e status code.',
-      },
-      {
-        slug: 'il-browser-sotto-la-lente',
-        titolo: 'Il browser sotto la lente: gli strumenti per sviluppatori',
-        durataMinuti: 35,
-        descrizione: 'La scheda Rete dei DevTools: vediamo i messaggi che il browser manda senza dircelo.',
-      },
-      {
-        slug: 'intercettiamo-un-login-con-caido',
-        titolo: 'Intercettiamo un login con Caido',
-        durataMinuti: 55,
-        descrizione: 'Mettiamo un proxy in mezzo e leggiamo la richiesta di login. E se la cambiassimo?',
-      },
-    ],
+    lezioni: [], // dai file MDX in content/lezioni/01-basi-rete-web/
   },
   {
     numero: 2,
-    slug: 'vulnerabilita-web',
+    slug: '02-vulnerabilita-web',
     titolo: 'Vulnerabilità web',
     sottotitolo: 'OWASP Top 10',
     contenuto: 'XSS, SQL injection, IDOR, autenticazione.',
@@ -54,31 +36,46 @@ export const MODULI: Modulo[] = [
     aperto: true,
     lezioni: [
       {
-        slug: 'owasp-top-10-la-mappa',
+        slug: '01-owasp-top-10-la-mappa',
+        ordine: 1,
+        xp: 50,
+        haContenuto: false,
         titolo: 'OWASP Top 10: la mappa',
         durataMinuti: 30,
         descrizione: 'Le 10 famiglie di vulnerabilità più diffuse, per sapere dove guardare.',
       },
       {
-        slug: 'xss',
+        slug: '02-xss',
+        ordine: 2,
+        xp: 50,
+        haContenuto: false,
         titolo: 'Cross-Site Scripting (XSS)',
         durataMinuti: 50,
         descrizione: 'Quando il sito ripete quello che scrivi senza controllarlo.',
       },
       {
-        slug: 'sql-injection',
+        slug: '03-sql-injection',
+        ordine: 3,
+        xp: 50,
+        haContenuto: false,
         titolo: 'SQL injection',
         durataMinuti: 55,
         descrizione: 'Quando il tuo input finisce dentro la domanda al database.',
       },
       {
-        slug: 'idor',
+        slug: '04-idor',
+        ordine: 4,
+        xp: 50,
+        haContenuto: false,
         titolo: 'IDOR: i dati delle altre',
         durataMinuti: 40,
         descrizione: 'Cambi un numero nell’URL e vedi il profilo di un’altra persona.',
       },
       {
-        slug: 'autenticazione',
+        slug: '05-autenticazione',
+        ordine: 5,
+        xp: 50,
+        haContenuto: false,
         titolo: 'Autenticazione rotta',
         durataMinuti: 50,
         descrizione: 'Password deboli, sessioni che non scadono, reset fatti male.',
@@ -87,7 +84,7 @@ export const MODULI: Modulo[] = [
   },
   {
     numero: 3,
-    slug: 'lab-pratici',
+    slug: '03-lab-pratici',
     titolo: 'Lab pratici',
     contenuto: 'PortSwigger Web Security Academy.',
     approccio: 'Fatti insieme, guidati step by step.',
@@ -97,7 +94,7 @@ export const MODULI: Modulo[] = [
   },
   {
     numero: 4,
-    slug: 'ctf-di-gruppo',
+    slug: '04-ctf-di-gruppo',
     titolo: 'CTF di gruppo',
     contenuto: 'Giornate di sfide in team.',
     approccio: 'Si impara 1000x più che da sole.',
@@ -107,7 +104,7 @@ export const MODULI: Modulo[] = [
   },
   {
     numero: 5,
-    slug: 'bug-bounty',
+    slug: '05-bug-bounty',
     titolo: 'Bug bounty',
     contenuto: 'Piccoli team che cacciano vulnerabilità reali.',
     approccio: 'Quando si è pronte, ci si supporta a vicenda.',
@@ -118,7 +115,7 @@ export const MODULI: Modulo[] = [
   },
   {
     numero: 6,
-    slug: 'lab-nostro',
+    slug: '06-lab-nostro',
     titolo: 'Lab nostro',
     contenuto: 'Ambiente controllato per attacchi simulati, 100% legale.',
     approccio: 'Costruito insieme, come team.',
@@ -128,7 +125,7 @@ export const MODULI: Modulo[] = [
   },
   {
     numero: 7,
-    slug: 'eventi-a-tema',
+    slug: '07-eventi-a-tema',
     titolo: 'Eventi a tema',
     contenuto: 'OSINT, social engineering, privacy.',
     approccio: 'Per allargare l’orizzonte oltre il web hacking.',
@@ -138,10 +135,8 @@ export const MODULI: Modulo[] = [
   },
 ]
 
-export const COMPLETATE_INIZIALI: string[] = [
-  idLezione('basi-rete-web', 'come-parla-il-web'),
-  idLezione('basi-rete-web', 'il-browser-sotto-la-lente'),
-]
+// L'utente di prova parte da zero: la lezione 2 si sblocca superando il quiz della lezione 1.
+export const COMPLETATE_INIZIALI: string[] = []
 
 const GIORNO = 24 * 60 * 60 * 1000
 
@@ -152,12 +147,12 @@ function tra(giorni: number, ore: number, minuti = 0): string {
   return d.toISOString()
 }
 
-// Una sessione a settimana, legata a una lezione. Pubblico solo il NUMERO di iscritte, mai i nomi.
+// Una sessione a settimana, legata a un modulo (e alle lezioni che la indicano in "sessioneLive").
+// Pubblico solo il NUMERO di iscritte, mai i nomi.
 export const SESSIONI_LIVE: SessioneLive[] = [
   {
-    id: 'live-caido',
-    modulo: 'basi-rete-web',
-    lezione: 'intercettiamo-un-login-con-caido',
+    id: 'sessione-01-caido', // = "sessioneLive" nel frontmatter delle lezioni del modulo 1
+    modulo: '01-basi-rete-web',
     titolo: 'Live · Intercettiamo un login con Caido',
     tema: 'web',
     inizio: tra(3, 18, 30),
@@ -171,9 +166,8 @@ export const SESSIONI_LIVE: SessioneLive[] = [
     iscritte: 14,
   },
   {
-    id: 'live-owasp',
-    modulo: 'vulnerabilita-web',
-    lezione: 'owasp-top-10-la-mappa',
+    id: 'sessione-02-owasp',
+    modulo: '02-vulnerabilita-web',
     titolo: 'Live · OWASP Top 10: la mappa',
     tema: 'web',
     inizio: tra(10, 18, 30),
@@ -186,9 +180,8 @@ export const SESSIONI_LIVE: SessioneLive[] = [
     iscritte: 9,
   },
   {
-    id: 'live-xss',
-    modulo: 'vulnerabilita-web',
-    lezione: 'xss',
+    id: 'sessione-02-xss',
+    modulo: '02-vulnerabilita-web',
     titolo: 'Live · Cross-Site Scripting (XSS)',
     tema: 'web',
     inizio: tra(17, 18, 30),

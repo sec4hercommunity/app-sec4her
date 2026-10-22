@@ -4,18 +4,18 @@ import { LINK } from '@/components/ctf/stili'
 import ElencoLezioni from '@/components/lezioni/ElencoLezioni'
 import RiquadroSessione from '@/components/lezioni/RiquadroSessione'
 import { IconaLucchetto } from '@/components/lezioni/Stato'
-import { MODULI } from '@/data/lezioni-mock'
+import { caricaCatalogo } from '@/lib/catalogo'
 
-// Una pagina per ogni modulo di data/lezioni-mock.ts; gli altri indirizzi non esistono.
+// Una pagina per ogni modulo del catalogo (data/lezioni-mock.ts + lezioni MDX); gli altri indirizzi non esistono.
 export const dynamicParams = false
 
-export function generateStaticParams() {
-  return MODULI.map((m) => ({ modulo: m.slug }))
+export async function generateStaticParams() {
+  return (await caricaCatalogo()).map((m) => ({ modulo: m.slug }))
 }
 
 export default async function PaginaModulo({ params }: { params: Promise<{ modulo: string }> }) {
   const { modulo: slug } = await params
-  const modulo = MODULI.find((m) => m.slug === slug)
+  const modulo = (await caricaCatalogo()).find((m) => m.slug === slug)
   if (!modulo) notFound()
   const numero = String(modulo.numero).padStart(2, '0')
 

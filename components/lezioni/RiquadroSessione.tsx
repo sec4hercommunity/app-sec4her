@@ -10,14 +10,15 @@ import { DoveEvento, PostiEvento, QuandoEvento } from '@/components/eventi/InfoE
 import ModaleIscrizione from '@/components/eventi/ModaleIscrizione'
 import IconaDiscord from '@/components/IconaDiscord'
 import { LINK_ESTERNO, LINKS } from '@/config/links'
-import { MODULI, SESSIONI_LIVE } from '@/data/lezioni-mock'
+import { SESSIONI_LIVE } from '@/data/lezioni-mock'
 import { eventoInCorso, eventoPassato } from '@/lib/eventi'
 import { useLezioni } from './LezioniProvider'
 
 type Props = {
-  // Nella pagina di un modulo o di una lezione: mostra la sua sessione, se c'è (altrimenti la prossima in programma).
+  // Nella pagina di un modulo: la sua prossima sessione. Nella pagina di una lezione: la sessione indicata
+  // in "sessioneLive" nel frontmatter. Se non c'è (o è già passata): la prossima in programma.
   modulo?: string
-  lezione?: string
+  sessioneId?: string
   // true = riquadro largo in cima al percorso; false = colonna laterale della lezione.
   largo?: boolean
 }
@@ -34,18 +35,17 @@ export function PulsanteDomandaDiscord({ className = '' }: { className?: string 
 
 // "Prossima sessione live": stessa iscrizione degli Eventi (conferma, Iscritta ✓, annulla, link alla call
 // solo dopo l'iscrizione, file .ics). Si vede solo il NUMERO di iscritte, mai i nomi.
-export default function RiquadroSessione({ modulo, lezione, largo = false }: Props) {
-  const { iscrizioni, iscritteTotali, iscriviti, annullaIscrizione } = useLezioni()
+export default function RiquadroSessione({ modulo, sessioneId, largo = false }: Props) {
+  const { moduli, iscrizioni, iscritteTotali, iscriviti, annullaIscrizione } = useLezioni()
   const ora = useOra()
   const [modale, setModale] = useState<'chiusa' | 'aperta' | 'confermata'>('chiusa')
 
   const future = SESSIONI_LIVE.filter((s) => !eventoPassato(s, ora)).sort(
     (a, b) => Date.parse(a.inizio) - Date.parse(b.inizio),
   )
-  // Prima quella della lezione (o del modulo) aperta, altrimenti la prossima in programma.
-  const delModulo = modulo ? future.find((s) => s.modulo === modulo && (!lezione || s.lezione === lezione)) : undefined
-  const diQuesta = lezione !== undefined && delModulo !== undefined
-  const sessione = delModulo ?? future[0]
+  const indicata = sessioneId ? future.find((s) => s.id === sessioneId) : undefined
+  const delModulo = modulo ? future.find((s) => s.modulo === modulo) : undefined
+  const sessione = indicata ?? delModulo ?? future[0]
 
   if (!sessione) {
     return (
@@ -60,13 +60,13 @@ export default function RiquadroSessione({ modulo, lezione, largo = false }: Pro
   }
 
   const iscritte = iscritteTotali(sessione)
-  const modDellaSessione = MODULI.find((m) => m.slug === sessione.modulo)
-  const lezDellaSessione = modDellaSessione?.lezioni.find((l) => l.slug === sessione.lezione)
-  const etichetta = diQuesta ? 'SESSIONE LIVE DI QUESTA LEZIONE' : 'PROSSIMA SESSIONE LIVE'
+  const modDellaSessione = moduli.find((m) => m.slug === sessione.modulo)
+  const etichetta = indicata ? 'SESSIONE LIVE DI QUESTA LEZIONE' : 'PROSSIMA SESSIONE LIVE'
 
   return (
     <>
       <section
+        id="sessione-live"
         aria-labelledby={`titolo-${sessione.id}`}
         className={`relative overflow-hidden rounded-2xl border border-brand/50 border-t-2 border-t-crimson bg-white/[0.04] p-5 shadow-[0_0_40px_-14px_rgba(109,68,224,0.6)] transition duration-300 starting:translate-y-2 starting:opacity-0 sm:p-6 ${
           iscrizioni[sessione.id] ? 'border-hack/70' : ''
@@ -95,11 +95,11 @@ export default function RiquadroSessione({ modulo, lezione, largo = false }: Pro
             <QuandoEvento evento={sessione} grande={largo} />
             <DoveEvento evento={sessione} />
             <PostiEvento evento={sessione} iscritte={iscritte} />
-            {!diQuesta && lezDellaSessione && modDellaSessione && (
+            {!indicata && modDellaSessione && modDellaSessione.slug !== modulo && (
               <p className="text-sm text-text/70">
-                Lezione:{' '}
-                <Link href={`/lezioni/${modDellaSessione.slug}/${lezDellaSessione.slug}`} className={LINK}>
-                  {lezDellaSessione.titolo} →
+                Modulo {modDellaSessione.numero}:{' '}
+                <Link href={`/lezioni/${modDellaSessione.slug}`} className={LINK}>
+                  {modDellaSessione.titolo} →
                 </Link>
               </p>
             )}

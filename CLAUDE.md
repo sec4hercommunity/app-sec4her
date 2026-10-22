@@ -42,12 +42,14 @@ Pagine **Eventi** (`/eventi`) e **Meeting** (`/meeting`): solo grafica, dati fin
 Zoom/Meet/Discord, community su Discord. **Tutti i link esterni** stanno in `config/links.ts` (segnaposto `SOSTITUISCI`)
 e si aprono in una nuova scheda con `rel="noopener noreferrer"` (usa `LINK_ESTERNO`).
 
-Sezione **Lezioni** (`/lezioni`, `/lezioni/[modulo]`, `/lezioni/[modulo]/[lezione]`): solo grafica. Moduli, elenco lezioni,
-progressi e sessioni live sono dati finti in `data/lezioni-mock.ts` (stato in `components/lezioni/LezioniProvider.tsx`);
-il testo delle lezioni è **MDX** in `content/lezioni/<modulo>/<lezione>.mdx` (note da Obsidian), con le proprietà in
-cima al file (filo, lab, lab_link, domande, bottino, compito, prossima) e i componenti di `mdx-components.tsx`
-(Callout, Schema, Flusso, blocco ```http). Le sessioni live riusano l'iscrizione degli Eventi. Nei lab niente soluzioni
-pronte; mai dettagli di bug reali. Un file MDX è codice: solo contenuti di founder e co-founder, mai input delle utenti.
+Sezione **Lezioni** (`/lezioni`, `/lezioni/[modulo]`, `/lezioni/[modulo]/[lezione]`): solo grafica. Moduli e sessioni
+live sono dati finti in `data/lezioni-mock.ts` (`MODULI_BASE`); le lezioni sono file **MDX** in
+`content/lezioni/<modulo>/` (note da Obsidian) e `lib/catalogo.ts` le legge sul server dal frontmatter (titolo, durata,
+xp, ordine, prova quiz/flag, prossima, sessioneLive). I moduli completi si ottengono con `caricaCatalogo()` (server) o
+`useLezioni().moduli` (client), **mai** da `MODULI_BASE` direttamente. Stato (progressi, XP, iscrizioni) in
+`components/lezioni/LezioniProvider.tsx`; componenti MDX in `components/lezione/`, registrati in `mdx-components.tsx`.
+Quiz e flag oggi sono verificati nel browser (mock): in produzione vanno verificati lato server. Nei lab niente
+soluzioni pronte; mai dettagli di bug reali. Un file MDX è codice: solo contenuti di founder e co-founder.
 
 ```
 app/          pagine (App Router); app/(riservata)/ = pagine che richiedono il login

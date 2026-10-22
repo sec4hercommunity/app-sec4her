@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { CARD } from '@/components/ctf/stili'
-import { MODULI } from '@/data/lezioni-mock'
 import { lezioniCompletate, statoModulo, type StatoModulo } from '@/lib/lezioni'
 import { useLezioni } from './LezioniProvider'
 import { BadgeStatoModulo, CerchioStato } from './Stato'
@@ -16,11 +15,11 @@ const LINEA: Record<StatoModulo, string> = {
 
 // Mappa dei 7 moduli collegati da una linea: orizzontale su schermo largo, verticale su telefono.
 export default function MappaPercorso() {
-  const { completate } = useLezioni()
+  const { moduli, completate } = useLezioni()
 
   return (
     <ol className="grid gap-4 lg:grid-cols-7 lg:gap-3">
-      {MODULI.map((m, i) => {
+      {moduli.map((m, i) => {
         const stato = statoModulo(m, completate)
         const fatte = lezioniCompletate(m, completate)
         const numero = String(m.numero).padStart(2, '0')
@@ -50,7 +49,7 @@ export default function MappaPercorso() {
             className="relative flex gap-4 transition duration-500 starting:translate-y-2 starting:opacity-0 lg:flex-col lg:items-center lg:gap-4"
             style={{ transitionDelay: `${i * 60}ms` }}
           >
-            {i < MODULI.length - 1 && (
+            {i < moduli.length - 1 && (
               <span
                 aria-hidden="true"
                 className={`absolute top-12 -bottom-4 left-6 w-0.5 -translate-x-1/2 lg:top-6 lg:bottom-auto lg:left-[calc(50%+1.5rem)] lg:h-0.5 lg:w-[calc(100%+0.75rem-3rem)] lg:translate-x-0 lg:-translate-y-1/2 ${LINEA[stato]}`}

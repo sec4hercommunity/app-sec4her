@@ -1,0 +1,242 @@
+---
+titolo: "Networking: le basi (quelle che servono davvero)"
+modulo: "01-basi-rete-web"
+slug: "01-networking-le-basi"
+ordine: 1
+livello: "Da zero"
+durata: "15 min"
+xp: 50
+sessioneLive: "sessione-01-caido"
+prossima: "02-intercettiamo-un-login"
+prova:
+  tipo: "quiz"
+  soglia: 70
+  domande:
+    - domanda: "Cos'è un protocollo?"
+      opzioni:
+        - "Un tipo di cavo di rete"
+        - "Un accordo su come due sistemi si parlano"
+        - "Un programma antivirus"
+      corretta: 1
+      spiegazione: "Esatto: un protocollo è solo un insieme di regole condivise per comunicare. HTTP, DNS, TLS… sono tutti accordi."
+    - domanda: "Cosa fa il DNS?"
+      opzioni:
+        - "Cifra i messaggi"
+        - "Traduce un nome (google.com) in un indirizzo IP"
+        - "Blocca i siti pericolosi"
+      corretta: 1
+      spiegazione: "Il DNS è la rubrica del web: tu scrivi il nome, lui ti dà il numero."
+    - domanda: "Vuoi inviare username e password in un login. Quale metodo usa di solito il browser?"
+      opzioni:
+        - "GET"
+        - "POST"
+        - "404"
+      corretta: 1
+      spiegazione: "POST = 'ti mando qualcosa'. I dati del login viaggiano nel BODY della richiesta."
+    - domanda: "Il server risponde 403. Cosa significa?"
+      opzioni:
+        - "Tutto ok, ecco la pagina"
+        - "Pagina non trovata"
+        - "Non sei autorizzata"
+      corretta: 2
+      spiegazione: "401/403 = non autorizzata. 200 = ok, 404 = non trovato, 500 = errore del server."
+    - domanda: "Un sito usa HTTPS (lucchetto 🔒). Quindi…"
+      opzioni:
+        - "È sicuro al 100%, non può avere vulnerabilità"
+        - "Il messaggio viaggia cifrato, ma il sito può comunque avere vulnerabilità"
+        - "Usa la porta 80"
+      corretta: 1
+      spiegazione: "HTTPS protegge la lettera in viaggio, non rende onesto il destinatario. XSS e SQL injection restano possibili."
+---
+
+<Intro
+  etichetta="Lezione sec4her · giorno 1 · da zero 🔓"
+  sottotitolo="Non ti serve diventare esperta di reti. Ti serve capire UNA cosa: come il tuo browser e un sito si scambiano messaggi. Da lì, l'hacking diventa ovvio."
+/>
+
+<Promessa>
+Questa lezione è corta di proposito. Il networking è un oceano, ma per iniziare a fare hacking web **ti bastano 5 concetti**. Il resto lo imparerai quando ti servirà, un pezzo alla volta. Non devi sapere tutto. Devi solo iniziare.
+</Promessa>
+
+<MappaConcetti
+  concetti={["Rete", "IP e porte", "DNS", "Messaggio HTTP", "HTTP vs HTTPS"]}
+/>
+
+## Il filo di tutta la lezione
+
+<Filo>Tutto il web è uno scambio di messaggi. Tu chiedi, il sito risponde. Sempre.</Filo>
+
+<ScambioMessaggi
+  da="TU (il browser)"
+  a="IL SITO (il server)"
+  andata="1. una domanda (richiesta)"
+  ritorno="2. una risposta"
+/>
+
+Tutto quello che vedi sotto serve solo a capire *come* viaggia quel messaggio. E l'hacking web, in fondo, è imparare a **leggere e cambiare** quei messaggi.
+
+<Passo numero={1} titolo="Cos'è una rete (in 30 secondi)">
+
+Una **rete** è semplicemente un insieme di dispositivi collegati che si scambiano informazioni: il tuo telefono, il computer, il router di casa, i server dei siti. Via cavo o via Wi-Fi, il concetto è uno solo: **dispositivi che si parlano.**
+
+Ma non basta essere collegati: devono usare le stesse *regole*. Quelle regole si chiamano **protocolli**.
+
+<Definizione termine="Protocollo">un accordo su come ci parliamo.</Definizione>
+
+<LatoHacker>
+Se capisci le regole con cui due sistemi si parlano, puoi anche capire come *rompere* quella conversazione. Ma ci arriviamo.
+</LatoHacker>
+
+</Passo>
+
+<Passo numero={2} titolo="Gli indirizzi: IP e porte">
+
+Perché un messaggio arrivi alla destinazione giusta, serve un **indirizzo**.
+
+<PalazzoPorte
+  ip="192.168.1.25"
+  porte={[
+    { numero: 80, nome: "HTTP", nota: "siti web non protetti" },
+    { numero: 443, nome: "HTTPS", nota: "siti web protetti" },
+    { numero: 25, nome: "Posta", nota: "invio email" }
+  ]}
+/>
+
+- **L'indirizzo IP** = l'indirizzo del **palazzo**. Un numero tipo `192.168.1.25` che identifica un dispositivo sulla rete.
+- **La porta** = il numero dell'**appartamento**. Un dispositivo fa tante cose insieme, e le porte servono a distinguerle.
+
+Quindi `sito.com:443` vuol dire: *il palazzo sito.com, appartamento 443 (quello del web sicuro)*.
+
+<CheckRapido
+  domanda="Un sito HTTPS risponde di solito su quale porta?"
+  opzioni={["80", "443", "25"]}
+  corretta={1}
+/>
+
+<LatoHacker>
+Sapere quali porte sono "aperte" su un server ti dice quali servizi sta facendo girare, e ogni servizio è una possibile porta d'ingresso. Questo è il primo passo del **recon**.
+</LatoHacker>
+
+</Passo>
+
+<Passo numero={3} titolo="Il DNS: la rubrica del web">
+
+Tu digiti `google.com`, non un numero. Ma la rete lavora con gli **IP**. Chi traduce il nome nel numero? Il **DNS** (Domain Name System): la **rubrica telefonica del web**.
+
+<DnsRubrica
+  esempi={[
+    { nome: "google.com", ip: "142.250.180.14" },
+    { nome: "sec4her.it", ip: "76.76.21.21" },
+    { nome: "portswigger.net", ip: "52.85.151.10" }
+  ]}
+/>
+
+Prima ancora di collegarsi al sito, il browser chiede al DNS: *"qual è l'IP di google.com?"*. Il DNS risponde col numero, e **poi** il browser può mandare la richiesta.
+
+<LatoHacker>
+Il DNS a volte "rivela" informazioni su un'azienda: sottodomini nascosti, server interni. È un'altra fonte di recon. E alcuni attacchi giocano proprio sul far risolvere un nome a un indirizzo diverso da quello giusto.
+</LatoHacker>
+
+</Passo>
+
+<Passo numero={4} titolo="Il messaggio HTTP: la lettera vera" evidenza>
+
+Ecco il **cuore di tutto**. La richiesta che il browser manda al server è come una **lettera**, con una struttura precisa. Passa il mouse (o tocca) su ogni parte:
+
+<LetteraHTTP
+  richiesta={`POST /login HTTP/1.1
+Host: sito.com
+User-Agent: Mozilla/5.0
+Cookie: session=abc123
+Content-Type: application/x-www-form-urlencoded
+
+username=giulia&password=segreta123`}
+  parti={[
+    { chiave: "metodo", testo: "POST", spiegazione: "Che tipo di lettera è. GET = dammi, POST = ti mando." },
+    { chiave: "url", testo: "/login", spiegazione: "A quale pagina va la lettera." },
+    { chiave: "header", testo: "Host … Content-Type", spiegazione: "La busta: chi sei, che browser usi, il tuo 'biglietto' (cookie)." },
+    { chiave: "body", testo: "username=…&password=…", spiegazione: "Il contenuto. Nel login: username e password." }
+  ]}
+/>
+
+E il server risponde con la **sua** lettera, che ha uno **status code**: il suo "sì / no". Gira le carte:
+
+<StatusCodes
+  codici={[
+    { codice: 200, significato: "Ok, ecco la pagina", colore: "verde" },
+    { codice: 302, significato: "Spostati, vai altrove (redirect)", colore: "viola" },
+    { codice: 401, significato: "Non sei autorizzata", colore: "cremisi" },
+    { codice: 403, significato: "Non sei autorizzata", colore: "cremisi" },
+    { codice: 404, significato: "Non trovato", colore: "grigio" },
+    { codice: 500, significato: "Errore del server", colore: "cremisi" }
+  ]}
+/>
+
+<LatoHacker importante>
+**Questa è la parte più importante di tutte.** Quasi tutto l'hacking web consiste nel leggere queste lettere e scriverne di "strane" per vedere come reagisce il server. Metodo, header, body, status code: imparerai a riconoscerli a colpo d'occhio. Quando apri un proxy (Caido/Burp), sono **esattamente** queste lettere che vedi passare.
+</LatoHacker>
+
+</Passo>
+
+<Passo numero={5} titolo="HTTP vs HTTPS: la cartolina e la busta chiusa">
+
+<CartolinaVsBusta
+  messaggio="username=giulia&password=segreta123"
+/>
+
+- **HTTP** (porta 80) = una **cartolina**: il messaggio viaggia in chiaro, chiunque lo intercetti lo legge.
+- **HTTPS** (porta 443) = una **busta chiusa e sigillata**: il messaggio è cifrato con **TLS**. Chi lo intercetta vede solo roba illeggibile.
+
+Oggi quasi tutti i siti usano HTTPS: è quello con il lucchetto 🔒 nel browser.
+
+<LatoHacker>
+Errore comune: HTTPS protegge il messaggio **in viaggio**, ma non rende il sito "sicuro". Un sito HTTPS può comunque avere XSS, SQL injection e tutte le vulnerabilità che studierai. Il lucchetto dice "la lettera è in una busta chiusa", non "il destinatario è onesto".
+</LatoHacker>
+
+</Passo>
+
+## Il viaggio completo
+
+Quando digiti un sito e premi invio, in meno di un secondo succede questo. Premi ▶ e guardalo passo per passo:
+
+<ViaggioCompleto
+  passi={[
+    "Digiti sito.com",
+    "Il DNS traduce il nome in un IP",
+    "Il browser manda una richiesta HTTPS all'IP, porta 443",
+    "Il server legge la richiesta",
+    "Il server risponde (status 200 + la pagina)",
+    "Il browser ti mostra la pagina"
+  ]}
+/>
+
+Questo è il networking che ti serve per iniziare. Non le topologie, non il modello OSI a sette livelli, non quindici protocolli. Questi 5 concetti sono le fondamenta su cui costruirai tutto il resto.
+
+<NonTiServeOra
+  elenco={["Topologie", "Modello OSI", "Subnet", "VLAN", "NAT", "ARP", "SMTP, SNMP, LDAP…"]}
+>
+Tutto questo esiste ed è interessante, ma **non ti serve per iniziare l'hacking web**. Lo incontrerai quando ti servirà, nel contesto di un attacco concreto. Impararlo ora, tutto insieme, servirebbe solo a spaventarti.
+
+📖 Vuoi approfondire? C'è un documento di riferimento completo, "Introduzione al Networking". Usalo come enciclopedia: ci torni quando una cosa specifica ti incuriosisce.
+</NonTiServeOra>
+
+<Bottino
+  punti={[
+    "Il web è uno scambio di messaggi: richiesta → risposta.",
+    "IP = il palazzo, porta = l'appartamento (80 HTTP, 443 HTTPS). Il DNS traduce i nomi in IP.",
+    "Una richiesta HTTP ha metodo, URL, header e body. La risposta ha uno status code. HTTPS cifra il viaggio, non rende il sito sicuro."
+  ]}
+/>
+
+<Compito>
+Apri un sito qualsiasi, premi **F12** → scheda **Rete (Network)** e ricarica la pagina. Clicca su una riga: riesci a trovare il **metodo**, lo **status code** e qualche **header**? Non serve capire tutto: guarda e basta.
+</Compito>
+
+<ProssimaLezione
+  titolo="Intercettiamo un login"
+  anteprima="Ci mettiamo in mezzo tra browser e server e leggiamo le lettere dal vivo. Tutto quello che hai letto qui diventa concreto."
+/>
+
+<Chiusura>
+La prima volta è sempre difficile. Ma con una guida, un sistema e un passo alla volta, diventa affrontabile. **Non sei sola.** 🔓
+</Chiusura>

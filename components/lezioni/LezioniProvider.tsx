@@ -4,10 +4,13 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 import { useEventi } from '@/components/eventi/useEventi'
 import { COMPLETATE_INIZIALI, SESSIONI_LIVE } from '@/data/lezioni-mock'
 import type { Evento, Iscrizione } from '@/lib/eventi'
+import { xpTotali, type Modulo } from '@/lib/lezioni'
 
 type ValoreLezioni = {
+  moduli: Modulo[] // catalogo letto dal server (lib/catalogo.ts)
   completate: ReadonlySet<string> // id "modulo/lezione"
   segnaCompletata: (id: string, completata: boolean) => void
+  xp: number // XP guadagnati (somma delle lezioni completate)
   // Sessioni live: stessa logica di iscrizione degli Eventi (solo il numero di iscritte è pubblico).
   iscrizioni: Record<string, Iscrizione>
   iscritteTotali: (s: Evento) => number
@@ -18,8 +21,9 @@ type ValoreLezioni = {
 const ContestoLezioni = createContext<ValoreLezioni | null>(null)
 
 // Stato della sezione Lezioni condiviso tra percorso, moduli e lezioni, tenuto in memoria con React.
-// Con Supabase: progressi e iscrizioni verranno letti e scritti sul database.
-export default function LezioniProvider({ children }: { children: ReactNode }) {
+// Con Supabase: progressi, XP e iscrizioni verranno letti e scritti sul database
+// (e le prove verificate sul server, non qui).
+export default function LezioniProvider({ moduli, children }: { moduli: Modulo[]; children: ReactNode }) {
   const [completate, setCompletate] = useState<ReadonlySet<string>>(() => new Set(COMPLETATE_INIZIALI))
   const { iscrizioni, iscritteTotali, iscriviti, annullaIscrizione } = useEventi(SESSIONI_LIVE)
 
@@ -34,7 +38,16 @@ export default function LezioniProvider({ children }: { children: ReactNode }) {
 
   return (
     <ContestoLezioni.Provider
-      value={{ completate, segnaCompletata, iscrizioni, iscritteTotali, iscriviti, annullaIscrizione }}
+      value={{
+        moduli,
+        completate,
+        segnaCompletata,
+        xp: xpTotali(moduli, completate),
+        iscrizioni,
+        iscritteTotali,
+        iscriviti,
+        annullaIscrizione,
+      }}
     >
       {children}
     </ContestoLezioni.Provider>

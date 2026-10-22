@@ -39,6 +39,13 @@ export function BadgeStatoModulo({ stato, compatto = false }: { stato: StatoModu
 export function BadgeStatoLezione({ stato }: { stato: StatoLezione }) {
   if (stato === 'completata') return <span className={`${PILLOLA} border-hack bg-hack/20 text-text`}>✓ Completata</span>
   if (stato === 'prossima') return <span className={`${PILLOLA} border-brand bg-brand/25 text-text`}>▶ Prossima</span>
+  if (stato === 'bloccata')
+    return (
+      <span className={`${PILLOLA} border-white/15 bg-white/5 text-text/60`}>
+        <IconaLucchetto className="h-3 w-3" />
+        Bloccata
+      </span>
+    )
   return <span className={`${PILLOLA} border-white/15 text-text/60`}>Da fare</span>
 }
 

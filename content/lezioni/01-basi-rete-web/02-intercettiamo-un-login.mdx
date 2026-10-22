@@ -1,0 +1,102 @@
+---
+titolo: "Intercettiamo un login (simulazione)"
+modulo: "01-basi-rete-web"
+slug: "02-intercettiamo-un-login"
+ordine: 2
+livello: "Da zero"
+durata: "20 min"
+xp: 50
+sessioneLive: "sessione-01-caido"
+prossima: null
+prova:
+  tipo: "flag"
+  # SOLO MOCK: in produzione la flag va verificata lato server (Supabase), mai nel browser.
+  flag: "sec4her{ho_cambiato_la_lettera}"
+  suggerimento: "La flag compare nella risposta del server quando entri come admin."
+---
+
+<Intro
+  etichetta="Lezione sec4her · giorno 1 · si fa, poi si capisce 🔓"
+  sottotitolo="Nella lezione prima hai letto com'è fatta una lettera HTTP. Adesso ti metti in mezzo e la guardi passare. Poi provi a cambiarla."
+/>
+
+<Promessa>
+Questa è una **simulazione**: tutto succede nel tuo browser, su un sito finto creato da noi. Non rompi niente, non serve installare nulla. Nella **sessione live** rifaremo la stessa cosa con un proxy vero (Caido).
+</Promessa>
+
+## Il filo
+
+<Filo>Il web è uno scambio di messaggi. Oggi ci mettiamo in mezzo.</Filo>
+
+<ScambioMessaggi
+  da="TU (il browser)"
+  in_mezzo="IL PROXY (chi legge le lettere che passano)"
+  a="IL SITO (il server)"
+  andata="la tua richiesta"
+  ritorno="la risposta"
+/>
+
+Un **proxy** è come un postino curioso: ogni lettera che parte dal tuo browser passa prima da lui. Lui la può **leggere**, **fermare** e perfino **modificare** prima di consegnarla.
+
+## Missione: entra come admin
+
+<SimulatoreProxy
+  sito="Biblioteca Bug (sito finto)"
+  utenteDemo={{ username: "giulia", password: "libri2026" }}
+  passi={[
+    { id: "intercept", istruzione: "1. Attiva l'intercettazione (Intercept ON)." },
+    { id: "login", istruzione: "2. Fai login nel sito con giulia / libri2026." },
+    { id: "leggi", istruzione: "3. La richiesta è ferma nel proxy. Clicca su metodo, URL, header e body per capire cosa sono." },
+    { id: "inoltra", istruzione: "4. Premi Forward e guarda la risposta: status 200, sei dentro come 'user'." },
+    { id: "modifica", istruzione: "5. Rifai il login, ma prima di inoltrare cambia nel body role=user in role=admin." },
+    { id: "flag", istruzione: "6. Inoltra di nuovo: nella risposta trovi la flag. Copiala qui sotto!" }
+  ]}
+  richiesta={`POST /login HTTP/1.1
+Host: biblioteca-bug.sec4her.lab
+User-Agent: Mozilla/5.0
+Content-Type: application/x-www-form-urlencoded
+Cookie: session=7f3a9c
+
+username=giulia&password=libri2026&role=user`}
+  rispostaUser={`HTTP/1.1 200 OK
+Content-Type: text/html
+Set-Cookie: session=7f3a9c; HttpOnly
+
+<h1>Ciao giulia! Ecco i tuoi libri.</h1>`}
+  rispostaAdmin={`HTTP/1.1 200 OK
+Content-Type: text/html
+Set-Cookie: session=7f3a9c; HttpOnly
+
+<h1>Pannello ADMIN</h1>
+<p>sec4her{ho_cambiato_la_lettera}</p>`}
+  rispostaErrore={`HTTP/1.1 401 Unauthorized
+
+<h1>Username o password errati</h1>`}
+/>
+
+<LatoHacker importante>
+Cosa è successo? Il sito si **fidava** di un valore che arrivava dal browser (`role=user`). Ma tutto quello che parte dal browser lo puoi cambiare. Regola d'oro: **mai fidarsi dell'input dell'utente**. Questo errore ha un nome che incontrerai nel modulo OWASP: *Broken Access Control*.
+</LatoHacker>
+
+<Domande titolo="Domande da farti (il ragionamento da pentester)">
+- Quali valori nella richiesta posso cambiare io?
+- Il server **controlla** davvero quei valori, o si fida?
+- Cosa succede se cambio un valore in qualcosa che non dovrei avere?
+- Come cambia lo **status code** quando sbaglio password?
+</Domande>
+
+<Bottino
+  punti={[
+    "Un proxy sta in mezzo tra browser e server e può leggere, fermare e modificare le richieste.",
+    "Nel login i dati viaggiano nel BODY di una richiesta POST.",
+    "Se il server si fida di un valore mandato dal browser, quel valore si può manipolare."
+  ]}
+/>
+
+<Compito>
+Prenota la **sessione live**: rifaremo questa missione insieme con **Caido**, su un lab vero. Porta il tuo laptop!
+</Compito>
+
+<Chiusura>
+Hai appena modificato la tua prima richiesta HTTP. Ricordati questa sensazione: è così che inizia. 🔓
+</Chiusura>

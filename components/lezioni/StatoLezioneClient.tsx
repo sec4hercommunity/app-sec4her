@@ -1,7 +1,6 @@
 'use client'
 
 import { PULSANTE_PRIMARIO } from '@/components/ctf/stili'
-import { MODULI } from '@/data/lezioni-mock'
 import { idLezione, statoLezione } from '@/lib/lezioni'
 import { useLezioni } from './LezioniProvider'
 import { BadgeStatoLezione } from './Stato'
@@ -10,8 +9,8 @@ type Props = { modulo: string; lezione: string }
 
 // Badge con lo stato attuale della lezione (cambia quando la segni come completata).
 export function BadgeLezioneAttuale({ modulo, lezione }: Props) {
-  const { completate } = useLezioni()
-  const m = MODULI.find((x) => x.slug === modulo)
+  const { moduli, completate } = useLezioni()
+  const m = moduli.find((x) => x.slug === modulo)
   const l = m?.lezioni.find((x) => x.slug === lezione)
   if (!m || !l) return null
   return <BadgeStatoLezione stato={statoLezione(m, l, completate)} />

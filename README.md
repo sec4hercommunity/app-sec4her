@@ -622,182 +622,158 @@ nel mese corrente (quando possibile) e ci sono sempre eventi futuri e passati.
 
 ## 10. Lezioni
 
-La sezione **Lezioni** (`/lezioni`) è la parte grafica del percorso formativo descritto in
-`docs/struttura-corsi.md`: **solo grafica**, niente backend. L'elenco dei moduli e delle lezioni, i progressi
-dell'utente di prova e le sessioni live sono **dati finti** in **`data/lezioni-mock.ts`**, gestiti con lo stato
-React. Il **testo** delle lezioni invece è vero contenuto in **MDX**, nella cartella **`content/lezioni/`**, perché
-le note arriveranno da **Obsidian**.
+La sezione **Lezioni** (`/lezioni`) è il percorso formativo di `docs/struttura-corsi.md`. I **moduli** e le
+**sessioni live** sono dati finti in **`data/lezioni-mock.ts`**. Le **lezioni** sono file **MDX** veri in
+**`content/lezioni/<modulo>/`**, scritti partendo dalle note di **Obsidian**: titolo, durata, XP, prova e lezione
+successiva arrivano dal **frontmatter** del file (`lib/catalogo.ts` li legge durante la build).
 
-> ⚠️ Progressi e iscrizioni restano nella memoria del browser: **ricaricando la pagina** si torna alla
-> situazione iniziale. Spostandosi tra percorso, moduli e lezioni con i link del sito, invece, restano.
+> ⚠️ Progressi, XP e iscrizioni restano nella memoria del browser: **ricaricando la pagina** si riparte da zero.
+> Spostandosi con i link del sito, invece, restano.
 
 ### Il percorso (`/lezioni`)
 
-- Titolo **"Il percorso"** e la frase *"Da zero, hands-first, mai da sole."*
-- In alto il riquadro **"Prossima sessione live"** (vedi sotto).
-- La **mappa dei 7 moduli** collegati da una linea: orizzontale su computer, **verticale su telefono**.
-  1 Basi di rete e web · 2 Vulnerabilità web (OWASP Top 10) · 3 Lab pratici · 4 CTF di gruppo · 5 Bug bounty ·
-  6 Lab nostro · 7 Eventi a tema.
-- Lo **stato** di ogni modulo:
+- Titolo **"Il percorso"**, frase *"Da zero, hands-first, mai da sole."* e riquadro **"Prossima sessione live"**.
+- **Mappa dei 7 moduli** collegati da una linea (verticale su telefono), con lo stato: ✓ Completato (verde),
+  ▶ In corso (viola, con bagliore), 🔒 Prossimamente (grigio). Oggi sono aperti i moduli 1 e 2.
+- **Barra di avanzamento** (*"0/7 lezioni completate"*) e **XP** guadagnati (*"⚡ 0 XP"*).
 
-| Stato | Aspetto | Quando |
+### Moduli, lezioni, lucchetti e XP
+
+- **Modulo 1 – Basi di rete e web** (`content/lezioni/01-basi-rete-web/`):
+  1. **Networking: le basi** (15 min, 50 XP) – prova: **quiz** (5 domande, serve il 70%, cioè 4 giuste);
+  2. **Intercettiamo un login** (20 min, 50 XP) – prova: **flag**.
+- **Modulo 2 – Vulnerabilità web**: lezioni di esempio senza testo (*"note in preparazione"*), con il pulsante
+  "Segna come completata".
+- **Lucchetti:** la prima lezione di un modulo aperto è libera; le altre si sbloccano quando la precedente è
+  completata. Quindi **la lezione 2 si apre solo dopo aver superato il quiz della lezione 1**. Le lezioni bloccate
+  non sono cliccabili e, aprendole dall'indirizzo, mostrano "Lezione bloccata".
+- **XP:** superare la prova (o segnare la lezione come completata) dà gli XP scritti nel frontmatter.
+
+> 🔒 **Solo per la grafica:** oggi risposte del quiz e flag sono scritte nel frontmatter e controllate nel browser,
+> quindi chi apre il codice della pagina le vede. **In produzione la verifica (e gli XP) andranno fatti lato
+> server** (Supabase), come scritto anche nei file.
+
+### La pagina della lezione
+
+In alto: modulo e numero, durata, livello, XP e stato. Poi il **testo MDX** (con i componenti qui sotto), la
+**prova finale** (quiz, flag oppure "Segna come completata"), e in fondo la **sessione live** indicata nel
+frontmatter (`sessioneLive`), con "Prenota il posto". Funziona come gli eventi: conferma, "Iscritta ✓", annulla,
+link alla call solo dopo l'iscrizione, file `.ics` e solo il numero di iscritte. Accanto c'è "Fai una domanda su
+Discord ↗" (`discordDomande` in `config/links.ts`).
+
+> 🛠 Il **SimulatoreProxy** della lezione 2 (sito finto + proxy stile Caido) **non è ancora stato fatto**: al suo
+> posto c'è il riquadro "Simulatore in arrivo". Per questo la flag non si trova ancora dentro il sito.
+
+### Il frontmatter di una lezione
+
+In cima al file, tra due righe `---` (in Obsidian sono le **Proprietà** della nota):
+
+```yaml
+---
+titolo: "Networking: le basi (quelle che servono davvero)"
+modulo: "01-basi-rete-web"        # = nome della cartella
+slug: "01-networking-le-basi"     # = nome del file, senza .mdx
+ordine: 1                         # posizione nel modulo
+livello: "Da zero"
+durata: "15 min"
+xp: 50
+sessioneLive: "sessione-01-caido" # id di una sessione in data/lezioni-mock.ts
+prossima: "02-intercettiamo-un-login"   # oppure null
+prova:
+  tipo: "quiz"                    # oppure "flag"
+  soglia: 70                      # % di risposte giuste per superarlo
+  domande:
+    - domanda: "Cos'è un protocollo?"
+      opzioni: ["Un tipo di cavo", "Un accordo su come due sistemi si parlano", "Un antivirus"]
+      corretta: 1                 # si conta da 0: la seconda opzione
+      spiegazione: "Un protocollo è un insieme di regole condivise."
+---
+```
+
+Per una prova **flag**: `tipo: "flag"`, `flag: "sec4her{...}"` e (facoltativo) `suggerimento: "..."`, che compare
+dopo il primo tentativo sbagliato. Le proprietà mancanti o scritte male non rompono la pagina: prendono un valore
+di riserva.
+
+### Componenti MDX disponibili
+
+Si usano direttamente nel file, **senza importarli** (sono registrati in `mdx-components.tsx`). Il testo dentro i
+componenti può usare Markdown normale (grassetto, elenchi, `codice`).
+
+**Testo** (`components/lezione/Testo.tsx` e vicini)
+
+| Componente | A cosa serve | Esempio |
 | --- | --- | --- |
-| ✓ Completato | verde | tutte le lezioni del modulo sono completate |
-| ▶ In corso | viola, con bagliore | il modulo è aperto e mancano lezioni |
-| 🔒 Prossimamente | grigio, non cliccabile | il modulo non è ancora aperto (`aperto: false`) |
+| `Intro` | Apertura con etichetta e sottotitolo | `<Intro etichetta="Lezione sec4her · giorno 1" sottotitolo="Ti serve capire UNA cosa." />` |
+| `Promessa` | Cosa ti porti a casa, senza spaventare | `<Promessa>Ti bastano **5 concetti**.</Promessa>` |
+| `Filo` | La frase chiave, in grande | `<Filo>Tu chiedi, il sito risponde. Sempre.</Filo>` |
+| `Passo` | Card numerata; `evidenza` = il passo più importante | `<Passo numero={4} titolo="La lettera vera" evidenza>…</Passo>` |
+| `Definizione` | Termine = significato | `<Definizione termine="Protocollo">un accordo su come ci parliamo.</Definizione>` |
+| `LatoHacker` | Perché interessa a chi attacca; `importante` = più forte | `<LatoHacker importante>Mai fidarsi dell'input.</LatoHacker>` |
+| `CheckRapido` | Micro-domanda con risposta subito (non conta per lo sblocco) | `<CheckRapido domanda="Porta HTTPS?" opzioni={["80", "443"]} corretta={1} />` |
+| `Domande` | Domande da farsi, senza soluzioni (elenco Markdown dentro) | `<Domande titolo="Domande da farti">`<br>`- Il server controlla?`<br>`</Domande>` |
+| `NonTiServeOra` | Riquadro richiudibile con quello da rimandare | `<NonTiServeOra elenco={["Modello OSI", "Subnet"]}>Lo vedrai dopo.</NonTiServeOra>` |
+| `Bottino` | I punti da portarsi a casa | `<Bottino punti={["Primo punto", "Secondo", "Terzo"]} />` |
+| `Compito` | Il compito per casa | `<Compito>Apri **F12** → Rete.</Compito>` |
+| `ProssimaLezione` | Anteprima della successiva, con lucchetto finché la prova non è superata (il link arriva da `prossima`) | `<ProssimaLezione titolo="Intercettiamo un login" anteprima="Ci mettiamo in mezzo." />` |
+| `Chiusura` | Frase finale centrata | `<Chiusura>**Non sei sola.** 🔓</Chiusura>` |
+| `MappaConcetti` | I concetti in alto, fissi; il concetto N si illumina quando arrivi al `Passo` N | `<MappaConcetti concetti={["Rete", "IP e porte", "DNS"]} />` |
 
-  Oggi sono aperti solo i moduli 1 e 2.
-- La **barra di avanzamento** generale: *"2/8 lezioni completate"*.
+**Interattivi** (`components/lezione/Interattivi.tsx`)
 
-### La pagina del modulo (`/lezioni/[modulo]`)
+| Componente | Cosa fa | Esempio |
+| --- | --- | --- |
+| `ScambioMessaggi` | Lettera animata da `da` ad `a` e ritorno; con `in_mezzo` passa da un terzo box | `<ScambioMessaggi da="TU" a="IL SITO" andata="richiesta" ritorno="risposta" in_mezzo="IL PROXY" />` |
+| `PalazzoPorte` | Palazzo con l'IP; cliccando una porta si vede il servizio | `<PalazzoPorte ip="192.168.1.25" porte={[{ numero: 443, nome: "HTTPS", nota: "siti protetti" }]} />` |
+| `DnsRubrica` | Terminale: scrivi un nome di esempio e appare l'IP | `<DnsRubrica esempi={[{ nome: "google.com", ip: "142.250.180.14" }]} />` |
+| `LetteraHTTP` | Richiesta con metodo, URL, header e body colorati; passando sopra compare la spiegazione | ``<LetteraHTTP richiesta={`POST /login HTTP/1.1…`} parti={[{ chiave: "metodo", testo: "POST", spiegazione: "…" }]} />`` |
+| `StatusCodes` | Carte che si girano al click (`colore`: verde, viola, cremisi, grigio) | `<StatusCodes codici={[{ codice: 200, significato: "Ok", colore: "verde" }]} />` |
+| `CartolinaVsBusta` | Interruttore HTTP/HTTPS: in chiaro o cifrato con il lucchetto | `<CartolinaVsBusta messaggio="username=giulia&password=segreta123" />` |
+| `ViaggioCompleto` | ▶ anima i passi uno alla volta, con avanti/indietro | `<ViaggioCompleto passi={["Digiti sito.com", "Il DNS trova l'IP"]} />` |
+| `SimulatoreProxy` | 🛠 Per ora solo il riquadro "Simulatore in arrivo" | (le proprietà scritte nella lezione 2 sono accettate) |
 
-Descrizione e approccio del modulo ed elenco delle lezioni con **stato** (✓ Completata, ▶ Prossima, Da fare) e
-**durata**. Accanto, la sessione live del modulo. I moduli chiusi mostrano solo *"Prossimamente"*.
+Restano disponibili anche `Callout` (`<Callout tipo="nota">…</Callout>`), `Schema`, `Flusso` e il blocco di codice con
+la lingua `http`, che mostra una richiesta o una risposta in stile terminale.
 
-- **Modulo 1:** Come parla il web: richieste e risposte · Il browser sotto la lente · **Intercettiamo un login
-  con Caido**.
-- **Modulo 2:** OWASP Top 10: la mappa · XSS · SQL injection · IDOR · Autenticazione rotta.
+### Come aggiungere una nuova lezione (da Obsidian)
 
-### La pagina della lezione (`/lezioni/[modulo]/[lezione]`)
-
-Struttura fissa, ispirata al modello della prima sessione (`docs/struttura-corsi.md`, sezione 3):
-
-1. **Il filo**: la frase chiave, in evidenza.
-2. **Contenuto**: il file MDX, con i componenti `Callout`, `Schema`, `Flusso` e il blocco **richiesta HTTP**
-   stile terminale.
-3. **Lab**: pulsante "Apri il lab ↗" (si apre in una nuova scheda) e **"Domande da farti"**. **Niente soluzioni
-   pronte**: insegniamo il ragionamento da pentester.
-4. **Bottino**: 3 punti su cosa hai capito.
-5. **Compito**.
-6. Pulsante **"Segna come completata"**: aggiorna subito lo stato nel percorso (mappa, modulo e barra). Si può
-   tornare indietro con "Segna come da fare".
-7. **Prossima lezione**, con l'anteprima.
-
-Di lato (sotto, su telefono) c'è la sessione live della lezione. La lezione completa di esempio è
-**"Intercettiamo un login con Caido"**. Le lezioni che non hanno ancora un file MDX mostrano *"Le note di questa
-lezione sono in preparazione"*.
-
-### Sessioni live
-
-In alto su `/lezioni` (la prossima in programma) e in ogni modulo e lezione (quella collegata, se c'è; altrimenti
-la prossima). Funzionano **esattamente come gli eventi**, riusando gli stessi componenti
-(`components/eventi/`):
-
-- data e ora, durata, piattaforma (Zoom / Google Meet / Discord), **numero di iscritte (mai i nomi)**;
-- **"Prenota il posto"** → modale con nome e cognome già compilati → *"Sei iscritta! ✓"*;
-- poi **"Iscritta ✓"**, "Annulla iscrizione", il **link alla call** (visibile solo dopo l'iscrizione) e
-  **"Aggiungi al calendario"** (file `.ics`);
-- **"Fai una domanda su Discord ↗"** porta al canale delle domande (`discordDomande` in `config/links.ts`).
-
-Le sessioni sono in `SESSIONI_LIVE` (`data/lezioni-mock.ts`): una a settimana, con le date calcolate rispetto ad
-"adesso", così sono sempre nel futuro.
-
-### Come aggiungere una nuova lezione in MDX (da Obsidian)
-
-**MDX** è Markdown (lo stesso di Obsidian) con in più la possibilità di usare dei componenti, come `<Callout>`.
-Una nota di Obsidian diventa una lezione così:
-
-1. **Scegli il modulo** e la sua cartella: `content/lezioni/basi-rete-web/`, `content/lezioni/vulnerabilita-web/`, …
-   (il nome della cartella è lo `slug` del modulo in `data/lezioni-mock.ts`).
-2. **Crea il file** `nome-della-lezione.mdx`: minuscole, parole separate da trattini, senza accenti
-   (es. `sql-injection.mdx`). Puoi copiare la nota da Obsidian e cambiare l'estensione da `.md` a `.mdx`.
-3. **Scrivi le proprietà in cima al file**, tra due righe `---`. In Obsidian sono le **Proprietà** della nota, quindi
-   puoi compilarle direttamente lì:
-
-   ```yaml
-   ---
-   filo: Il web è uno scambio di messaggi. Oggi ci mettiamo in mezzo.
-   lab: "PortSwigger · Nome del lab"
-   lab_link: https://portswigger.net/web-security/...
-   domande:
-     - Prima domanda da farsi davanti al target?
-     - Seconda domanda?
-   bottino:
-     - Primo punto da portarsi a casa.
-     - Secondo punto.
-     - Terzo punto.
-   compito: Cosa fare prima della prossima lezione.
-   prossima: Anteprima della lezione successiva.
-   ---
-   ```
-
-   Sono tutte facoltative: se ne manca una, quella parte della pagina non compare. `lab_link` deve iniziare con
-   `https://`, altrimenti viene ignorato. **Nelle domande niente soluzioni.**
-4. **Scrivi il contenuto** sotto le proprietà, in Markdown normale: titoli `##`, elenchi, **grassetto**, link,
-   tabelle. Puoi usare questi componenti senza importarli:
-
-   | Cosa | Come si scrive |
-   | --- | --- |
-   | Riquadro nota / attenzione / suggerimento | `<Callout tipo="nota">Testo</Callout>` (anche `tipo="attenzione"`, `tipo="suggerimento"` e `titolo="..."`) |
-   | Riquadro per schemi e diagrammi | `<Schema titolo="Chi legge le lettere" didascalia="...">...</Schema>` |
-   | Passi collegati da frecce | `<Flusso passi="Browser, Caido, Server" evidenzia="Caido" />` |
-   | Richiesta o risposta HTTP stile terminale | un blocco di codice con la lingua `http` (vedi sotto) |
-
-   ````md
-   ```http
-   POST /login HTTP/1.1
-   Host: lab.esempio.it
-
-   username=anna&password===segreta==
-   ```
-   ````
-
-   Metodo, header e status code vengono colorati da soli. Le parti scritte tra `==uguali==` (l'evidenziatore di
-   Obsidian) vengono evidenziate.
-5. **Aggiungi la lezione all'elenco** in `data/lezioni-mock.ts`, nell'array `lezioni` del modulo, con lo stesso
-   `slug` del nome del file:
-
-   ```ts
-   { slug: 'sql-injection', titolo: 'SQL injection', durataMinuti: 55, descrizione: 'Frase breve per l’elenco.' },
-   ```
-6. **Controlla**: `npm run dev` e apri la lezione dal percorso. Prima della PR, `npm run build` (un errore di
-   scrittura nell'MDX blocca la build e indica la riga).
-
-**Differenze da Obsidian da sistemare quando copi una nota:**
+1. Copia la nota in **`content/lezioni/<modulo>/NN-nome-lezione.mdx`** (minuscole, trattini, niente accenti;
+   `NN` = ordine). La cartella è lo `slug` del modulo in `data/lezioni-mock.ts` (es. `01-basi-rete-web`).
+2. Compila il **frontmatter** come sopra (`titolo`, `durata`, `xp`, `ordine`, `prova`, `prossima`, …).
+3. Scrivi il testo con Markdown e i componenti della tabella. Altre differenze da Obsidian:
 
 | In Obsidian | Nella lezione MDX |
 | --- | --- |
 | `> [!note]`, `> [!warning]`, `> [!tip]` | `<Callout tipo="nota">`, `<Callout tipo="attenzione">`, `<Callout tipo="suggerimento">` |
-| `[[Altra nota]]` (link interni) | `[testo](/lezioni/modulo/lezione)` |
-| `![[immagine.png]]` | per ora niente immagini: usa `<Schema>` e `<Flusso>` |
-| `==evidenziato==` nel testo | `**grassetto**` (l'evidenziatore funziona solo nei blocchi `http`) |
-| `{` e `<` nel testo | vanno nei blocchi di codice, o scritti come `` `{` `` (in MDX hanno un significato speciale) |
+| `[[Altra nota]]` | `[testo](/lezioni/modulo/lezione)` |
+| `![[immagine.png]]` | per ora niente immagini: usa i componenti |
+| `{` e `<` nel testo | dentro un blocco di codice o tra apici inversi (in MDX hanno un significato speciale) |
 
-> 🔒 **Sicurezza.** Un file MDX è **codice** che gira nel sito: le lezioni le scrivono solo founder e co-founder, e
-> arrivano su `main` tramite PR revisionata. Le note delle socie (la futura "zona condivisione") non dovranno mai
-> diventare file MDX: andranno salvate come testo semplice. I bug reali trovati in bug bounty **non vanno mai**
-> nelle lezioni: solo il metodo, mai il target o il dettaglio del bug (`docs/struttura-corsi.md`, sezione 4).
+4. **Non serve toccare altri file**: la lezione compare da sola nel suo modulo, nell'ordine di `ordine`.
+5. Controlla con `npm run dev`; prima della PR `npm run build` (un errore nell'MDX blocca la build e indica la riga).
+
+> 🔒 **Sicurezza.** Un file MDX è **codice** che gira nel sito: le lezioni le scrivono solo founder e co-founder,
+> e arrivano su `main` tramite PR revisionata. Le note delle socie non dovranno mai diventare file MDX. I bug reali
+> trovati in bug bounty non vanno mai nelle lezioni: solo il metodo.
 
 ### I file
 
 | File | Cosa contiene |
 | --- | --- |
-| `app/(riservata)/lezioni/layout.tsx` | Stato condiviso tra le pagine + sfondo scuro |
-| `app/(riservata)/lezioni/page.tsx` | Il percorso: sessione live, mappa dei moduli, barra di avanzamento |
-| `app/(riservata)/lezioni/[modulo]/page.tsx` | Pagina del modulo |
-| `app/(riservata)/lezioni/[modulo]/[lezione]/page.tsx` | Pagina della lezione: carica il file MDX e le sue proprietà |
-| `content/lezioni/<modulo>/<lezione>.mdx` | ✍️ **Testo delle lezioni** (oggi: `basi-rete-web/intercettiamo-un-login-con-caido.mdx`) |
-| `mdx-components.tsx` | Stile del Markdown e componenti usabili nelle lezioni senza importarli |
-| `components/lezioni/mdx/` | `Callout`, `Schema` + `Flusso`, `RichiestaHttp` |
-| `components/lezioni/LezioniProvider.tsx` | Lo **stato**: lezioni completate e iscrizioni alle sessioni (usa `useEventi`) |
-| `components/lezioni/MappaPercorso.tsx`, `BarraAvanzamento.tsx`, `ElencoLezioni.tsx`, `Stato.tsx` | Mappa, barra, elenco lezioni, badge e cerchi di stato |
-| `components/lezioni/RiquadroSessione.tsx`, `StatoLezioneClient.tsx` | Sessione live + Discord, "Segna come completata" |
-| `lib/lezioni.ts` | Tipi e regole: stato di moduli e lezioni, lezione successiva, lettura sicura delle proprietà |
-| `data/lezioni-mock.ts` | ⚠️ **Dati finti**: 7 moduli, 8 lezioni, 2 già completate, 3 sessioni live |
-| `next.config.ts` | Attiva MDX (`@next/mdx`) con i plugin per tabelle e proprietà |
-
-Per il riuso, ai componenti degli Eventi sono state aggiunte solo delle opzioni facoltative, che non cambiano la
-pagina Eventi: `useEventi(iniziali)`, `testoPulsante` in `AzioniIscrizione` e `titolo` in `ModaleIscrizione`.
+| `content/lezioni/01-basi-rete-web/*.mdx` | ✍️ **Le lezioni** (testo + frontmatter) |
+| `lib/catalogo.ts` | Legge sul server i file MDX di ogni modulo e crea l'elenco delle lezioni |
+| `lib/lezioni.ts` | Tipi e regole: lettura del frontmatter, stati, lucchetti, XP, soglia del quiz |
+| `data/lezioni-mock.ts` | ⚠️ **Dati finti**: `MODULI_BASE` (i 7 moduli), progressi iniziali, sessioni live |
+| `app/(riservata)/lezioni/` | Percorso, pagina del modulo, pagina della lezione |
+| `components/lezioni/` | Mappa, barra, elenco lezioni, stati, sessione live, stato condiviso (`LezioniProvider`) |
+| `components/lezione/` | Componenti MDX (testo e interattivi) e `Prova.tsx` (quiz, flag, lucchetto della lezione) |
+| `mdx-components.tsx` | Stile del Markdown e registrazione di tutti i componenti |
 
 ### Integrazione futura con Supabase
 
-- **Progressi**: una tabella "lezioni completate" (utente, lezione) al posto di `COMPLETATE_INIZIALI`, con Row Level
-  Security: ognuna vede solo i propri progressi.
-- **Sessioni live**: come gli eventi (tabelle per sessioni e iscrizioni, posti controllati sul server, link della
-  call dato solo a chi è iscritta).
-- **Contenuti**: i file MDX restano nel repository (si pubblicano con una PR). Moduli ed elenco delle lezioni
-  possono restare in `data/lezioni-mock.ts` o passare in una tabella.
-- **Lezioni riservate** ai membri (Fase 2-3): il controllo andrà fatto **sul server**, non solo nel browser.
+- **Progressi e XP**: tabella "lezioni completate" con Row Level Security (ognuna vede solo i propri).
+- **Prove**: quiz e flag verificati **sul server**; le risposte e le flag non devono più arrivare nel browser.
+- **Sessioni live**: come gli eventi (iscrizioni sul server, link della call solo a chi è iscritta).
+- **Contenuti**: i file MDX restano nel repository e si pubblicano con una PR.
 
 ---
 
@@ -944,18 +920,19 @@ Avvia l'app con `npm run dev` e apri http://localhost:3000.
 
 **Lezioni** (dal menu ☰ → Lezioni, oppure http://localhost:3000/lezioni)
 
-- [ ] **Percorso** – titolo "Il percorso", 7 moduli collegati da una linea: 1 e 2 "▶ In corso" (viola, con bagliore),
-      3-7 "🔒 Prossimamente" (grigi, non cliccabili). Barra "2/8 lezioni completate".
-- [ ] **Sessione live** – riquadro in alto con data, durata, Zoom e "14 iscritte". "Prenota il posto" → conferma →
-      "Sei iscritta! ✓", poi "Iscritta ✓", 15 iscritte, "Entra nella call ↗" e "Aggiungi al calendario" (.ics).
-      "Annulla iscrizione" → si torna a 14 e il link sparisce. "Fai una domanda su Discord ↗" si apre in una nuova scheda.
-- [ ] **Modulo** – clicca il modulo 1: 3 lezioni, 2 "✓ Completata" e "Intercettiamo un login con Caido" "▶ Prossima".
-- [ ] **Lezione** – apri la lezione Caido: il filo, schema, callout, blocchi richiesta/risposta HTTP, tabella, Lab
-      con "Apri il lab ↗" e 4 domande, Bottino (3 punti), Compito, Prossima lezione.
-- [ ] **Completata** – "Segna come completata" → "Completata ✓"; torna al percorso con i link: "3/8 lezioni
-      completate" e il modulo 1 diventa "✓ Completato" (verde).
-- [ ] **Lezione senza testo** – "OWASP Top 10: la mappa" mostra "Le note di questa lezione sono in preparazione".
-- [ ] **Telefono** – la mappa diventa verticale e nessuna pagina scorre in orizzontale.
+- [ ] **Percorso** – 7 moduli collegati da una linea, "0/7 lezioni completate" e "⚡ 0 XP".
+- [ ] **Modulo 1** – 2 lezioni: "Networking: le basi" (▶ Prossima) e "Intercettiamo un login" (🔒 Bloccata, non
+      cliccabile).
+- [ ] **Lezione 1** – la mappa dei 5 concetti resta in alto e si illumina scorrendo; prova i componenti: porte del
+      palazzo, rubrica DNS (`google.com`), lettera HTTP (passa sopra le parti), carte degli status code, interruttore
+      HTTP/HTTPS, ▶ del viaggio completo, check rapido, "Non ti serve ora".
+- [ ] **Quiz** – sbaglia apposta → "ne servono almeno 4" e le spiegazioni; "Riprova" e rispondi bene → "Quiz
+      superato", +50 XP, e "Sbloccata: Intercettiamo un login →".
+- [ ] **Lezione 2** – si apre; al posto del simulatore c'è "Simulatore in arrivo". Flag sbagliata → errore e
+      suggerimento; flag `sec4her{ho_cambiato_la_lettera}` → "Flag corretta!".
+- [ ] **Percorso** – "2/7 lezioni completate", "⚡ 100 XP", modulo 1 "✓ Completato".
+- [ ] **Sessione live** – in fondo a ogni lezione: "Prenota il posto" → "Sei iscritta! ✓", link alla call e `.ics`.
+- [ ] **Telefono** – nessuna pagina scorre in orizzontale.
 
 **Vista da telefono**
 
@@ -1067,6 +1044,10 @@ Branch `lezioni` (parte da `eventi-meeting`):
     moduli e delle lezioni, lezione di esempio completa in **MDX** ("Intercettiamo un login con Caido") con
     `Callout`, `Schema`, `Flusso` e blocco richiesta HTTP; sessioni live con la stessa iscrizione degli eventi e
     pulsante Discord. Dati finti in `data/lezioni-mock.ts`, testi in `content/lezioni/`.
+
+15. **Lezioni vere del modulo 1** – le lezioni arrivano dai file MDX in `content/lezioni/01-basi-rete-web/` (frontmatter
+    con titolo, durata, XP, prova, prossima lezione, sessione live). Nuovi componenti MDX in `components/lezione/`,
+    quiz e flag, lucchetti tra le lezioni e XP. Il simulatore proxy della lezione 2 è ancora da fare.
 
 ---
 

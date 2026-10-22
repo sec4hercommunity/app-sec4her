@@ -5,11 +5,38 @@ import Callout from '@/components/lezioni/mdx/Callout'
 import RichiestaHttp from '@/components/lezioni/mdx/RichiestaHttp'
 import Schema, { Flusso } from '@/components/lezioni/mdx/Schema'
 import { LINK } from '@/components/ctf/stili'
+import CheckRapido from '@/components/lezione/CheckRapido'
+import {
+  CartolinaVsBusta,
+  DnsRubrica,
+  LetteraHTTP,
+  PalazzoPorte,
+  ScambioMessaggi,
+  StatusCodes,
+  ViaggioCompleto,
+} from '@/components/lezione/Interattivi'
+import MappaConcetti from '@/components/lezione/MappaConcetti'
+import NonTiServeOra from '@/components/lezione/NonTiServeOra'
+import ProssimaLezione from '@/components/lezione/ProssimaLezione'
+import SimulatoreProxy from '@/components/lezione/SimulatoreProxy'
+import {
+  Bottino,
+  Chiusura,
+  Compito,
+  Definizione,
+  Domande,
+  Filo,
+  Intro,
+  LatoHacker,
+  Passo,
+  Promessa,
+} from '@/components/lezione/Testo'
 import { LINK_ESTERNO } from '@/config/links'
 
 // Componenti e stili usati da TUTTI i file MDX (le lezioni in content/lezioni/).
 // I componenti qui sotto si usano nelle lezioni senza bisogno di importarli:
-// <Callout>, <Schema>, <Flusso>, <RichiestaHttp> (o un blocco di codice ```http).
+// <Callout>, <Schema>, <Flusso>, <RichiestaHttp> (o un blocco di codice ```http) e quelli di components/lezione/
+// (elenco con esempi nel README, sezione 10).
 
 // Link: quelli interni ("/lezioni/...") restano nella scheda, quelli esterni si aprono in una nuova scheda
 // con rel="noopener noreferrer". Sono accettati solo link https, http, mailto e interni (mai "javascript:").
@@ -85,6 +112,30 @@ const components: MDXComponents = {
   Schema,
   Flusso,
   RichiestaHttp,
+  // components/lezione/: testo
+  Intro,
+  Promessa,
+  Filo,
+  Passo,
+  Definizione,
+  LatoHacker,
+  CheckRapido,
+  Domande,
+  NonTiServeOra,
+  Bottino,
+  Compito,
+  ProssimaLezione,
+  Chiusura,
+  MappaConcetti,
+  // components/lezione/: interattivi
+  ScambioMessaggi,
+  PalazzoPorte,
+  DnsRubrica,
+  LetteraHTTP,
+  StatusCodes,
+  CartolinaVsBusta,
+  ViaggioCompleto,
+  SimulatoreProxy,
 }
 
 export function useMDXComponents(): MDXComponents {

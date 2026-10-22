@@ -5,7 +5,10 @@ import { fineEvento, type Evento } from './eventi'
 
 // 2026-10-25T18:30:00.000Z → 20261025T183000Z
 function dataIcs(ms: number): string {
-  return new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  return new Date(ms)
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}/, '')
 }
 
 // Caratteri speciali da proteggere nei testi.
