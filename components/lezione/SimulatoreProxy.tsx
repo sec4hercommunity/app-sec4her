@@ -9,6 +9,7 @@ import RichiestaCliccabile, {
   SPIEGAZIONI_BASE,
   type ChiaveParte,
 } from '@/components/lezione/RichiestaCliccabile'
+import { useLezioneCorrente } from '@/components/lezione/Prova'
 
 // Simulatore di proxy (stile Caido) per la lezione "Intercettiamo un login".
 // A sinistra un sito finto con form di login, a destra il proxy che sta in mezzo.
@@ -81,6 +82,7 @@ function righePagina(testo: string): { tag: 'h1' | 'p'; testo: string }[] {
 export default function SimulatoreProxy({
   sito = 'Sito finto',
   utenteDemo,
+  passi = [],
   richiesta,
   rispostaUser,
   rispostaAdmin,
@@ -96,29 +98,51 @@ export default function SimulatoreProxy({
   const [modo, setModo] = useState<'spiega' | 'modifica'>('spiega')
   const [parte, setParte] = useState<ChiaveParte | null>(null) // parte della richiesta di cui si legge la spiegazione
   const [partiViste, setPartiViste] = useState<ReadonlySet<ChiaveParte>>(new Set())
+  const [fatti, setFatti] = useState<ReadonlySet<string>>(new Set()) // passi della checklist completati
+  const [copiata, setCopiata] = useState(false)
+  const lezione = useLezioneCorrente()
+
+  // Checklist: gli id dei passi nel frontmatter (intercept, login, leggi, inoltra, modifica, flag)
+  // si spuntano da soli quando succede la cosa giusta.
+  function segna(...ids: string[]) {
+    setFatti((f) => (ids.every((i) => f.has(i)) ? f : new Set([...f, ...ids])))
+  }
+  const passoFatto = (p: string) => fatti.has(p) || !!lezione?.superata
+
+  function cambiaIntercept() {
+    if (!intercept) segna('intercept')
+    setIntercept(!intercept)
+  }
 
   function scegliParte(chiave: ChiaveParte) {
     setParte(chiave)
-    setPartiViste((v) => new Set(v).add(chiave))
+    const viste = new Set(partiViste).add(chiave)
+    setPartiViste(viste)
+    if (CHIAVI.every((c) => viste.has(c))) segna('leggi')
   }
 
   function modificaRichiesta(testo: string) {
     setFerma(testo)
+    if (leggiRichiesta(testo).campi.get('role')?.trim() === 'admin') segna('modifica')
   }
 
   const server = (testo: string) =>
     rispostaServer(testo, utenteDemo, { user: rispostaUser, admin: rispostaAdmin, errore: rispostaErrore })
   const dentro = risposta?.tipo === 'user' || risposta?.tipo === 'admin'
+  const flag = risposta?.tipo === 'admin' ? risposta.testo.match(/sec4her\{[^}\s]+\}/)?.[0] : undefined
 
   function esci() {
     setRisposta(null)
     setPassword('')
+    setCopiata(false)
   }
 
   function accedi(e: FormEvent) {
     e.preventDefault()
     const testo = richiestaDiLogin(richiesta, username, password)
     setRisposta(null)
+    setCopiata(false)
+    if (utenteDemo && username === utenteDemo.username && password === utenteDemo.password) segna('login')
     if (intercept) {
       setFerma(testo)
       setVista('proxy')
@@ -129,8 +153,21 @@ export default function SimulatoreProxy({
 
   function inoltra() {
     if (ferma === null) return
-    setRisposta(server(ferma))
+    const r = server(ferma)
+    if (r.tipo === 'user') segna('inoltra')
+    if (r.tipo === 'admin') segna('modifica', 'flag')
+    setRisposta(r)
     setFerma(null)
+  }
+
+  async function copiaFlag() {
+    if (!flag) return
+    try {
+      await navigator.clipboard.writeText(flag)
+      setCopiata(true)
+    } catch {
+      setCopiata(false)
+    }
   }
 
   function scarta() {
@@ -143,6 +180,35 @@ export default function SimulatoreProxy({
       <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-hack/50 bg-hack/10 px-3 py-1 font-mono text-xs font-bold text-hack">
         🧪 Simulazione: sito finto, tutto succede nel tuo browser
       </p>
+
+      {passi.length > 0 && (
+        <div className="mb-5 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4" data-checklist>
+          <p className="font-mono text-xs font-bold tracking-[0.25em] text-[#a98bff]">
+            🎯 MISSIONE · {passi.filter((p) => passoFatto(p.id)).length}/{passi.length}
+          </p>
+          <ol className="mt-3 space-y-2">
+            {passi.map((p) => {
+              const fatto = passoFatto(p.id)
+              return (
+                <li key={p.id} data-passo-missione={p.id} data-fatto={fatto} className="flex items-start gap-3 text-sm">
+                  <span
+                    aria-hidden="true"
+                    className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border font-mono text-xs font-bold transition ${
+                      fatto ? 'border-hack bg-hack text-white' : 'border-white/25 text-transparent'
+                    }`}
+                  >
+                    ✓
+                  </span>
+                  <span className={fatto ? 'text-text/50 line-through decoration-hack/60' : 'text-text/90'}>
+                    {p.istruzione}
+                    <span className="sr-only">{fatto ? ' (fatto)' : ' (da fare)'}</span>
+                  </span>
+                </li>
+              )
+            })}
+          </ol>
+        </div>
+      )}
 
       {/* Su telefono i due pannelli diventano due schede */}
       <div className="mb-3 grid grid-cols-2 gap-2 lg:hidden" role="group" aria-label="Scegli il pannello">
@@ -275,7 +341,7 @@ export default function SimulatoreProxy({
               type="button"
               role="switch"
               aria-checked={intercept}
-              onClick={() => setIntercept((v) => !v)}
+              onClick={cambiaIntercept}
               className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-mono text-xs font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                 intercept ? 'border-hack bg-hack/20 text-hack' : 'border-white/20 text-text/60'
               }`}
@@ -381,7 +447,16 @@ export default function SimulatoreProxy({
                     data-risposta
                     className="mt-2 overflow-x-auto rounded-xl border border-white/10 bg-black/40 p-3 font-mono text-[13px] leading-relaxed whitespace-pre-wrap text-text/85"
                   >
-                    {risposta.testo}
+                    {flag
+                      ? risposta.testo.split(flag).map((pezzo, i) => (
+                          <span key={i}>
+                            {i > 0 && (
+                              <mark className="rounded bg-hack/30 px-0.5 font-bold text-[#4fd08a]">{flag}</mark>
+                            )}
+                            {pezzo}
+                          </span>
+                        ))
+                      : risposta.testo}
                   </pre>
                 )}
               </div>
@@ -389,6 +464,30 @@ export default function SimulatoreProxy({
           </div>
         </div>
       </div>
+
+      {flag && (
+        <div
+          role="status"
+          data-flag-trovata
+          className="flag-trovata mt-4 rounded-2xl border border-hack bg-hack/15 px-5 py-5 text-center"
+        >
+          <p className="font-mono text-xl font-bold text-hack">🏴 Flag trovata!</p>
+          <p className="mt-1 text-sm text-text/80">
+            Hai cambiato una lettera e il server ti ha creduta. Copia la flag e inseriscila nella prova qui sotto.
+          </p>
+          <code className="mt-3 inline-block rounded-lg bg-black/40 px-3 py-1.5 font-mono text-sm break-all text-[#4fd08a]">
+            {flag}
+          </code>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <button type="button" onClick={copiaFlag} className={PULSANTE_SECONDARIO}>
+              {copiata ? '✓ Copiata' : '📋 Copia la flag'}
+            </button>
+            <a href="#prova" className={PULSANTE_PRIMARIO}>
+              Vai alla prova ↓
+            </a>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
