@@ -1,0 +1,322 @@
+---
+titolo: "Cross-Site Scripting (XSS)"
+modulo: "02-vulnerabilita-web"
+slug: "03-xss"
+ordine: 3
+livello: "Base"
+durata: "40 min"
+xp: 50
+sessioneLive: "sessione-02-xss"
+prossima: "04-injection-ssrf-secrets"
+prova:
+  tipo: "quiz"
+  soglia: 70
+  domande:
+    - domanda: "Cos'è davvero una XSS, al di là del payload?"
+      opzioni:
+        - "Un bug del JavaScript del browser"
+        - "Un fallimento del confine di fiducia: l'app mette l'input nella pagina e il browser lo tratta come codice invece che come testo"
+        - "Un attacco che funziona solo sui siti senza HTTPS"
+      corretta: 1
+      spiegazione: "La vulnerabilità non riguarda «il JavaScript»: riguarda il trust boundary. Il browser non distingue il codice dello sviluppatore da quello iniettato dall'attaccante: per lui è tutto uguale."
+    - domanda: "Qual è la vera differenza tra reflected, stored e DOM-based?"
+      opzioni:
+        - "Il payload usato"
+        - "DOVE atterra l'input e QUANDO parte"
+        - "Il browser che si usa"
+      corretta: 1
+      spiegazione: "Reflected vive nel link/richiesta e parte quando la vittima ci clicca; stored è salvato e colpisce ogni visitatore; DOM-based è tutto nel JavaScript lato client."
+    - domanda: "Qual è LA domanda chiave da farsi su ogni input?"
+      opzioni:
+        - "Quanto è lungo il mio input?"
+        - "Dove finisce il mio input nella risposta, e qual è il contesto che lo circonda?"
+        - "Il sito usa React o no?"
+      corretta: 1
+      spiegazione: "Il contesto è tutto: lo stesso input richiede payload diversi se atterra nel testo HTML, in un attributo, dentro uno script o in un URL. Il contesto determina il payload, sempre."
+    - domanda: "Per cacciare una reflected XSS conviene guardare «View Source» o «Inspect»?"
+      opzioni:
+        - "Inspect, perché mostra il DOM vivo"
+        - "View Source, perché mostra l'HTML grezzo che il server ha mandato"
+        - "Sono equivalenti"
+      corretta: 1
+      spiegazione: "View Source mostra l'HTML grezzo del server; Inspect mostra il DOM già modificato dal JavaScript. Per la reflected serve il sorgente grezzo."
+    - domanda: "Il tuo input compare in due punti della risposta: uno codificato in modo sicuro, uno no. Cosa insegna?"
+      opzioni:
+        - "Di fermarsi alla prima occorrenza"
+        - "Di controllare SEMPRE tutte le occorrenze del marcatore: il primo punto può essere sicuro, il secondo sfruttabile"
+        - "Che il sito non è vulnerabile"
+      corretta: 1
+      spiegazione: "Fermarsi alla prima = perdere il bug. E ricorda: non esiste «il payload giusto», conta il concetto (dove atterra + cosa è filtrato). Concetto > payload."
+---
+
+<Intro
+  etichetta="Lezione sec4her · Modulo 2 · ragiona come una hunter 🔓"
+  sottotitolo="Il concetto conta più del payload. Impara a pensare, non a copiare: dove finisce il mio input, e qual è il contesto che lo circonda?"
+/>
+
+<Promessa>
+Chi è alle prime armi cerca «il payload giusto». Chi caccia capisce il concetto e costruisce il payload adatto alla situazione. In questa lezione non impari una lista di stringhe magiche — impari la domanda universale da farsi su ogni input, e come il **contesto** decide tutto il resto.
+</Promessa>
+
+<MappaConcetti
+  concetti={["Il modello mentale", "La metodologia", "Lab: attributo", "Lab: href javascript:", "Regole di contesto", "Due tecniche"]}
+/>
+
+## Il filo
+
+<Filo>Il contesto determina il payload. Sempre. Concetto maggiore del payload.</Filo>
+
+<Passo numero={1} titolo="Il modello mentale">
+
+### Cos'è davvero una XSS
+
+Una XSS succede quando un'applicazione prende l'input di un utente e lo inserisce in una pagina HTML **senza renderlo sicuro da mostrare**. Il browser, a quel punto, vede quell'input e lo tratta come **codice** (HTML o JavaScript) invece che come semplice testo.
+
+Il punto chiave: la vulnerabilità non riguarda davvero «il JavaScript». Riguarda un **fallimento del confine di fiducia** (*trust boundary*): l'applicazione si fida abbastanza dell'input da metterlo nella pagina, ma il browser non sa distinguere tra ciò che ha scritto lo sviluppatore e ciò che ha iniettato un attaccante. Per il browser è tutto uguale.
+
+### I tre tipi — cosa cambia davvero
+
+La differenza non è il payload, è **dove atterra** e **quando parte**.
+
+<Schema titolo="Dove vive ogni tipo di XSS">
+- **1 · REFLECTED** — serve il link: la vittima clicca → il server riflette l'input nella risposta → il payload parte nel browser
+- **2 · STORED** — nessun link: l'attaccante salva il payload → il database lo memorizza → ogni visitatore lo esegue
+- **3 · DOM-BASED** — tutto nel browser: una *sorgente* (es. l'URL dopo `#`) viene letta dal JS e scritta in un *sink* nel DOM
+</Schema>
+
+**Reflected XSS** — L'input malevolo viaggia in una richiesta (parametro URL, form) e il server lo «riflette» indietro nella risposta. L'attacco vive nell'URL o nella richiesta. Per colpire una vittima devi mandarle un link costruito ad hoc: il payload parte solo quando lei ci clicca.
+
+**Stored XSS** — L'input malevolo viene **salvato** nel database dell'applicazione (commenti, campi del profilo, recensioni). Ogni volta che qualcuno carica quella pagina, il payload parte nel suo browser. Più pericolosa, perché non serve nessun link: la trappola è già dentro il sito.
+
+**DOM-based XSS** — La vulnerabilità è interamente nel JavaScript lato client. Il server potrebbe non vedere nemmeno l'input malevolo. È il JavaScript stesso che legge qualcosa (es. la parte dell'URL dopo `#`) e la scrive nel DOM in modo non sicuro.
+
+### Perché conta, per chi caccia bug
+
+Ogni tipo si trova in modo diverso:
+
+- **Reflected** → cambia ogni parametro che trovi, e guarda come appare nella risposta
+- **Stored** → metti un marcatore unico in ogni campo, poi naviga il sito e cerca dove ricompare
+- **DOM-based** → analizza il JavaScript, cercando le «sorgenti» (dove entra l'input) che finiscono nei «sink» (dove viene scritto)
+
+### LA domanda chiave da farsi su ogni input
+
+<FraseChiave>Dove finisce il mio input nella risposta, e qual è il contesto che lo circonda?</FraseChiave>
+
+Il **contesto è tutto.** La stessa vulnerabilità richiede payload completamente diversi a seconda di dove atterra l'input:
+
+- Dentro un tag `<script>` → scrivi direttamente JavaScript
+- Dentro un attributo HTML (`value="..."`) → prima devi uscire dalle virgolette
+- Come testo HTML normale → inietti un tag
+- Dentro un URL (`href="..."`) → usi il protocollo `javascript:`
+
+**Il contesto determina il payload. Sempre.**
+
+</Passo>
+
+<Passo numero={2} titolo="La metodologia di caccia (i passi universali)">
+
+Questo è il percorso da seguire per **ogni** potenziale XSS. Il contesto decide il payload: segui il ramo giusto.
+
+<Schema titolo="Albero decisionale — dal contesto alla tecnica">
+- **Testo HTML** (`<div>QUI</div>`) → inietta un tag nuovo (es. `<img src=x onerror=alert(1)>`)
+- **Attributo** (`value=QUI`) → puoi usare la virgoletta? Sì → attribute breakout; No → se è un URL, vai al ramo URL
+- **Dentro `<script>`** (`var x=QUI`) → scrivi JS diretto (chiudi la stringa, poi `alert(1)`)
+- **URL** (`href=QUI`) → abuso dello schema (`javascript:alert(1)`)
+</Schema>
+
+**La regola d'oro:** 1) dove atterra l'input (contesto) → 2) cosa è filtrato (test caratteri) → 3) *solo ora* il payload. **CONCETTO > PAYLOAD.**
+
+**Passo 1 — Mappa tutti i punti di input.** Trova ovunque tu possa inserire dati: parametri URL, barre di ricerca, campi dei form, header, cookie, HTTP referer, upload di file. Elencali tutti *prima* di testare qualsiasi cosa.
+
+**Passo 2 — Inietta un marcatore unico.** Usa qualcosa di distintivo che non comparirebbe mai naturalmente nella pagina (es. `claudia12345xyz`). Inseriscilo in ogni input. Dev'essere unico, così lo ritrovi con certezza nella risposta.
+
+**Passo 3 — Guarda il sorgente della risposta (View Source, non Inspect).** Tasto destro → Visualizza sorgente pagina (Ctrl+U), **non** «Ispeziona elemento». La differenza conta: *View Source* ti mostra l'HTML grezzo che il server ha mandato; *Inspect* mostra il DOM vivo, che il JavaScript può aver modificato. Per cacciare reflected XSS, serve il sorgente grezzo.
+
+**Passo 4 — Trova TUTTE le occorrenze del marcatore.** Premi Ctrl+F e cerca. **Non fermarti alla prima.** Il tuo input spesso compare in più punti: uno magari è codificato in modo sicuro, un altro è sfruttabile. Continua finché non le hai trovate tutte.
+
+> **Lezione dal lab:** il mio input era riflesso in DUE punti — una volta in modo sicuro dentro `<h1>0 search results for 'marker'</h1>`, e una volta in modo vulnerabile dentro `<input value="marker">`. Fermarsi alla prima = perdere il bug.
+
+**Passo 5 — Identifica il CONTESTO di ogni occorrenza.** Per ogni punto in cui compare l'input, chiediti: dove atterra esattamente? Testo HTML (`<div>marker</div>`), attributo (`<input value="marker">`), dentro uno script (`<script>var x = "marker";</script>`), dentro un URL (`<a href="/page?q=marker">`), dentro un commento (`<!-- marker -->`). Ogni contesto richiede un approccio diverso.
+
+**Passo 6 — Testa cosa viene filtrato.** Prova questi caratteri **uno alla volta**. Per ognuno, guarda il sorgente e annota: resta com'è? Viene codificato? Rimosso? Sostituito?
+
+`<` `>` (angle brackets) · `"` (doppio apice) · `'` (singolo apice) · `/` (slash) · `(` `)` (parentesi) · `;` (punto e virgola) · backslash, backtick, ecc.
+
+Questo ti dice *esattamente* quali difese esistono e cosa puoi usare.
+
+**Passo 7 (bonus) — Scegli il payload in base a contesto E filtri.** Solo adesso hai il quadro completo: sai *dove* atterra l'input e *quali* caratteri puoi usare. Solo ora costruisci il payload.
+
+> **Regola:** quando qualcosa sembra promettente, rileggi sempre la descrizione del lab/scope. Assicurati di stare analizzando la funzionalità giusta. (Lezione dal lab: stavo quasi perdendo tempo sui commenti, mentre il bug era nella ricerca.)
+
+</Passo>
+
+<Passo numero={3} titolo="Lab 1: reflected XSS in un attributo, con angle brackets HTML-encoded">
+
+### Come si «decodifica» il titolo del lab
+
+- «Reflected XSS» → l'input torna nella risposta
+- «into attribute» → l'input atterra dentro un attributo HTML (fondamentale)
+- «with angle brackets HTML-encoded» → `<` e `>` sono filtrati: niente nuovi tag
+- «inject an attribute and call alert» → iniettare un NUOVO attributo su un tag ESISTENTE
+
+### Contesto trovato
+
+```html
+<input type=text placeholder='Search the blog...' name=search value="MARKER">
+```
+
+L'input atterra dentro l'attributo `value`, circondato da doppi apici.
+
+### La catena di ragionamento (questo è l'oro)
+
+<Flusso passi="angle brackets filtrati: niente nuovi tag, ma l'input è già dentro un tag esistente (input), idea: non creo un tag → AGGIUNGO un attributo, per aggiungerlo esco da value con la virgoletta, mi serve un attributo che esegua JS (event handler), deve partire da solo (onfocus + autofocus)" />
+
+1. `<` e `>` sono filtrati → non posso iniettare `<script>`, `<img>` o qualsiasi nuovo tag
+2. L'input è già dentro un tag esistente (`<input>`)
+3. Per sfruttarlo: non creo un nuovo tag, **aggiungo un nuovo attributo a quello esistente**
+4. Per aggiungere un attributo, devo prima uscire dall'attributo `value` attuale, con `"`
+5. Mi serve un attributo che esegua JavaScript → gli **event handler** (`onfocus`, `onclick`, `onmouseover`...)
+6. Deve partire da solo, senza azione dell'utente → combino `onfocus` con `autofocus` (che forza l'input a ricevere il focus al caricamento della pagina)
+
+### Payload
+
+```
+" onfocus="alert(1)" autofocus
+```
+
+### Cosa diventa l'HTML risultante
+
+```html
+<input ... value="" onfocus="alert(1)" autofocus">
+```
+
+Il `"` chiude `value` in anticipo → `onfocus="alert(1)"` diventa un nuovo attributo → `autofocus` fa scattare il focus al caricamento → `onfocus` parte → `alert(1)` viene eseguito.
+
+### Payload alternativo (valido anch'esso)
+
+```
+"onmouseover="alert(1)
+```
+
+Parte quando l'utente passa il mouse sopra l'input. Più semplice, ma richiede un'interazione.
+
+</Passo>
+
+<Passo numero={4} titolo="Lab 2: stored XSS nell'attributo href, con doppi apici HTML-encoded">
+
+**Tipo:** Stored XSS. **Dove atterra l'input:** dentro l'attributo `href` di un tag `<a>` (il link al sito web dell'autore del commento). **Filtro in atto:** i doppi apici (`"`) sono HTML-encoded → non si può uscire dall'attributo.
+
+### Perché il «breakout» classico non funziona
+
+Il `"` viene codificato in `&quot;`, quindi non posso chiudere l'attributo `href` e iniettare event handler come nel Lab 1.
+
+### L'intuizione chiave
+
+Quando controlli il valore di un URL (`href`, `src`, parametri di redirect), **non serve uscire dall'attributo.** Lo schema URI `javascript:` fa sì che il browser esegua il codice direttamente quando il link viene seguito. La vulnerabilità è nello **schema**, non nella sintassi.
+
+### Payload
+
+```
+javascript:alert(1)
+```
+
+(inserito nel campo «Website» del form dei commenti)
+
+### HTML risultante
+
+```html
+<a href="javascript:alert(1)">TuoNome</a>
+```
+
+### Come funziona, passo passo
+
+1. Il form dei commenti ti lascia inserire l'URL del tuo sito
+2. L'applicazione non valida lo schema dell'URL → accetta QUALSIASI valore
+3. Il valore finisce nell'attributo `href` così com'è (codifica solo gli apici)
+4. Quando il link viene cliccato, il browser interpreta `javascript:` come schema di esecuzione codice
+5. `alert(1)` parte nel browser della vittima
+
+### Altri schemi URI pericolosi da conoscere
+
+- `javascript:` — esegue codice (il classico)
+- `data:` — può incorporare HTML/JS in base64 (es. `data:text/html,...`)
+- `vbscript:` — solo vecchio IE, quasi morto ma ancora presente in contesti legacy
+
+### Dove possono comparire URL javascript:
+
+- `<a href="javascript:...">` — quello appena sfruttato
+- `<form action="javascript:...">` — inviare il form esegue codice
+- `<iframe src="javascript:...">` — l'iframe si carica eseguendo codice
+- Parametri di redirect: `?redirect=javascript:alert(1)` — se l'app lo usa per `window.location` o un `<meta refresh>`
+
+</Passo>
+
+<Passo numero={5} titolo="Regole da aggiungere alla metodologia">
+
+<Callout tipo="suggerimento" titolo="Nuova regola per l'analisi del contesto">
+Quando l'input atterra dentro un attributo che accetta URL (`href`, `src`, `action`, parametri di redirect), prova i payload da schema URI (`javascript:alert(1)`, varianti con maiuscole/minuscole contro blocklist ingenue) **prima** di tentare il breakout dall'attributo. Se l'app valida lo schema, prova le varianti. Se non lo valida, hai una XSS senza dover uscire da nessun attributo.
+</Callout>
+
+</Passo>
+
+<Passo numero={6} titolo="Le due tecniche a confronto (zoom out)">
+
+Con questi due lab conosci **due tecniche di sfruttamento XSS completamente diverse**:
+
+| Tecnica | Quando usarla | Pattern del payload |
+|---|---|---|
+| Attribute breakout | Input in un attributo, puoi usare `"` | virgoletta + event handler + autofocus |
+| Abuso dello schema URI | Input in un attributo URL | schema `javascript:` |
+
+### Matrice degli event handler (per il breakout)
+
+| Obiettivo | Scelta migliore | Perché |
+|---|---|---|
+| Auto-parte al caricamento (input/textarea) | `autofocus` + `onfocus` | Scatta subito, nessuna azione utente |
+| Auto-parte su immagine rotta | `onerror` su `<img>` | Scatta quando l'immagine non carica |
+| Parte su interazione mouse | `onmouseover` | Semplice, richiede il movimento del mouse |
+| Parte al click | `onclick` | Richiede un click volontario — meno affidabile |
+| Parte quando l'elemento carica | `onload` | Funziona su `<body>`, `<iframe>`, `<svg>`... |
+
+**Regola pratica:** per le soluzioni dei lab usa quello che scatta più in fretta; per i test reali gli handler auto-firing (`autofocus`+`onfocus`, `onerror`, `onload`).
+
+</Passo>
+
+## Le lezioni di mentalità (la parte più importante)
+
+<LatoHacker importante>
+1. **Non esiste «il payload giusto».** Chi è alle prime armi cerca «la risposta». Chi caccia capisce il concetto e costruisce il payload adatto alla situazione. La stessa vulnerabilità ha tanti exploit validi.
+2. **Controlla SEMPRE tutte le occorrenze del marcatore.** Il primo punto può essere sicuro, il secondo o terzo sfruttabile. Non fermarti alla prima.
+3. **La descrizione del lab dice quasi tutto.** Parole come «into attribute» o «encoded» non sono casuali: sono istruzioni precise sul contesto e sul filtro.
+4. **Rileggi lo scope quando qualcosa ti incuriosisce.** Perdere tempo fuori scope è una trappola da principianti.
+5. **Concetto > Payload.** Il payload cambia da situazione a situazione. Il CONCETTO (dove atterra l'input + cosa è filtrato + come aggiro) è universale. Padroneggia il concetto e il payload si scrive da sé.
+</LatoHacker>
+
+<Bottino
+  punti={[
+    "Una XSS è un fallimento del trust boundary: input messo nella pagina e trattato dal browser come codice.",
+    "Reflected / stored / DOM-based: cambia DOVE atterra l'input e QUANDO parte, non il payload.",
+    "Il contesto determina il payload. Concetto > payload: capisci dove atterra e cosa è filtrato, e il payload si scrive da sé."
+  ]}
+/>
+
+<Callout tipo="suggerimento" titolo="Allenati sul lab">
+Qui hai imparato il **modello mentale**. I payload li costruisci con le mani sui lab gratuiti e legali della [Web Security Academy di PortSwigger — Cross-site scripting](https://portswigger.net/web-security/cross-site-scripting): ci sono tutti i contesti (attributo, script, URL) e i filtri visti qui. *Questa lezione nasce da lab reali e dal ragionamento vero di chi li ha risolti — non da un PDF generico.*
+</Callout>
+
+<Domande titolo="Domande da farti su ogni input">
+- **Dove** finisce il mio input nella risposta? In quanti punti diversi?
+- Qual è il **contesto** di ogni occorrenza (testo HTML, attributo, script, URL, commento)?
+- Quali caratteri sono **filtrati** o codificati? L'ho testato uno per uno?
+- Sto guardando il **sorgente grezzo** (View Source) o il DOM già modificato (Inspect)?
+- Se è un attributo URL, ho provato lo schema prima del breakout?
+</Domande>
+
+<ProssimaLezione
+  titolo="Injection, SSRF e secrets nel codice"
+  anteprima="La XSS era input trattato come codice nell'HTML. Ora generalizziamo: input non fidato che viaggia da un SOURCE fino a un SINK pericoloso — query, richieste del server, segreti pubblicati. Stesso peccato originale."
+/>
+
+<Chiusura>
+La XSS non è una lista di stringhe magiche: è una domanda che ti fai su ogni input. Impara la domanda, e i payload verranno da soli. **Non sei sola.** 🔓
+</Chiusura>

@@ -1,0 +1,201 @@
+---
+titolo: "JWT kid traversal + lettura file locale"
+modulo: "02-vulnerabilita-web"
+slug: "06-jwt-kid-traversal-lfi"
+ordine: 6
+livello: "Avanzato"
+durata: "30 min"
+xp: 80
+prossima: null
+prova:
+  tipo: "quiz"
+  soglia: 70
+  domande:
+    - domanda: "HS256 è un algoritmo simmetrico. Qual è la conseguenza per la sicurezza?"
+      opzioni:
+        - "Nessuna, è sempre sicuro"
+        - "La stessa chiave firma e verifica: se conosci (o controlli) la chiave, puoi forgiare token validi a piacere"
+        - "Serve una chiave diversa per ogni utente"
+      corretta: 1
+      spiegazione: "Se l'attaccante riesce a far usare al server una chiave che conosce, la firma non garantisce più niente e può fabbricarsi un token da admin."
+    - domanda: "Il campo «kid» del JWT viene usato per aprire un file (es. la chiave). Qual è il difetto?"
+      opzioni:
+        - "Il kid è troppo corto"
+        - "Il kid è controllato dall'attaccante e finisce in un percorso file senza sanificazione: path traversal sulla scelta della chiave"
+        - "Il kid non serve a niente"
+      corretta: 1
+      spiegazione: "Non si deve mai far scegliere al client la chiave di verifica. Puntando kid a un file dal contenuto noto/vuoto, l'attaccante conosce la chiave e firma lui stesso un token da admin."
+    - domanda: "Cos'è il path traversal?"
+      opzioni:
+        - "Un modo per velocizzare l'app"
+        - "Infilare ../ in un percorso per far leggere al programma un file fuori dalla cartella prevista"
+        - "Un tipo di cifratura"
+      corretta: 1
+      spiegazione: "La radice è sempre la stessa: input dell'utente usato in un percorso file senza sanificazione."
+    - domanda: "La funzione playlist valida il nome del file ma non il contenuto. Cosa insegna?"
+      opzioni:
+        - "Che validare il filename basta"
+        - "Che la protezione parziale è il nemico: se validi solo una parte dell'input, l'altra è la falla"
+        - "Che le playlist sono sempre sicure"
+      corretta: 1
+      spiegazione: "Hanno protetto una via d'ingresso (il filename) e lasciato aperta l'altra (il contenuto, con schema file://). Stesso pattern dell'X-Original-URL: la protezione guarda nel posto sbagliato."
+    - domanda: "Qual è il filo che lega kid traversal e playlist abuse?"
+      opzioni:
+        - "Usano lo stesso linguaggio"
+        - "Il sistema si fida di qualcosa che il client controlla (il kid, il contenuto della playlist): se lo scrivi tu, non è una prova"
+        - "Sono entrambi attacchi al browser"
+      corretta: 1
+      spiegazione: "È lo stesso principio di Authentication. E i bug gravi sono catene: un file-read e un token-forge, da soli mezze cose, insieme danno compromissione."
+---
+
+<Intro
+  etichetta="Lezione sec4her · Modulo 2 · livello avanzato · da un caso reale 🔓"
+  sottotitolo="Due bug che da soli sono «mezzi bug», concatenati diventano: forgi un token da admin E leggi qualsiasi file del server."
+/>
+
+<Callout tipo="attenzione" titolo="Avanzato">
+Presuppone le basi (HTTP, cookie, autenticazione). Qui il valore non è il payload, è vedere **come si incatenano due debolezze**.
+</Callout>
+
+<Promessa>
+La seconda catena della serie. Dopo il parser differential, un altro modo in cui due crepe innocue si tengono per mano: una chiave scelta dal client e una validazione a metà. Impari a riconoscere l'input non fidato quando finisce in un percorso file, e a cercare la via che il controllo non copre.
+</Promessa>
+
+<MappaConcetti
+  concetti={["I concetti base", "Due bug in catena", "Bug 1: kid traversal", "Bug 2: playlist abuse", "La catena completa", "La difesa"]}
+/>
+
+## Il filo
+
+<Filo>Il sistema si fida di qualcosa che il client controlla. Se lo scrivi tu, non è una prova.</Filo>
+
+<Passo numero={1} titolo="I concetti che servono prima">
+
+### Cos'è un JWT
+
+Un **JWT** (JSON Web Token) è un «lasciapassare» che i siti danno dopo il login, al posto di tenere una sessione lato server. È una stringa in tre parti separate da punti: `header.payload.firma`.
+
+- **header** — dice come è firmato il token (es. algoritmo `HS256`)
+- **payload** — i dati (es. `{"isadmin": false}`)
+- **firma** — un «sigillo» calcolato con una chiave segreta, che dovrebbe impedire di modificarlo
+
+L'idea: se cambi il payload, la firma non torna più → il server rifiuta. **A meno che** tu non riesca a conoscere o controllare la chiave di firma. Ed è qui che nasce il bug.
+
+### HS256 e il punto debole
+
+`HS256` è un algoritmo **simmetrico**: la *stessa* chiave serve sia per firmare sia per verificare. Conseguenza fondamentale: **se conosci la chiave, puoi forgiare token validi a piacere.** Normalmente la chiave è un segreto sul server. Ma se riesci a far usare al server una chiave che *tu* conosci... hai vinto.
+
+### Cos'è il path traversal
+
+**Path traversal** = far leggere al programma un file diverso da quello previsto, infilando `../` (sali di una cartella) nel percorso. Se il codice fa `apri("/cartella/" + nome)` e tu metti `nome = ../../../../etc/passwd`, finisci a leggere file fuori dalla cartella prevista. La radice del problema è sempre la stessa: **input dell'utente usato in un percorso file senza sanificazione.**
+
+</Passo>
+
+<Passo numero={2} titolo="Il quadro: due bug in catena">
+
+<Flusso passi="Input attaccante (header 'kid' del JWT), 🔑 BUG 1: kid path traversal → forgia un token da admin, 📄 BUG 2: playlist abuse → legge file locali, 💥 Lettura di qualsiasi file (flag, segreti, chiavi)" evidenzia="💥 Lettura di qualsiasi file (flag, segreti, chiavi)" />
+
+La catena completa: forgi un JWT da admin via il `kid` traversal → da admin invii una playlist malevola → il server legge un file locale arbitrario → il suo contenuto torna nella pagina.
+
+</Passo>
+
+<Passo numero={3} titolo="Bug 1: kid path traversal → forgiare il token">
+
+Il `kid` («key id») è un campo dell'header JWT che dice al server *quale chiave* usare per verificare la firma. Il codice vulnerabile:
+
+```python
+kid = header.get("kid")      # l'attaccante controlla questo
+key = load_key(kid)          # apre f"/tmp/keys/{kid}.txt"
+```
+
+Vedi il problema? Il `kid` viene dall'header del token — **non verificato, controllato dall'attaccante** — e finisce dritto in un percorso file, senza sanificazione. È **path traversal** applicato alla scelta della chiave di firma.
+
+### Il ragionamento (questo è l'oro)
+
+Niente vieta che `kid` sia `../../../../qualche/file`. E qui scatta l'intuizione che lega i due concetti del passo 1:
+
+1. HS256 è simmetrico → se controllo la chiave, forgio token validi.
+2. Posso puntare `kid` a **un file di cui conosco/prevedo il contenuto**.
+3. Quindi: punto `kid` a un file dal contenuto noto o vuoto → **conosco la chiave di firma** → firmo io stessa un token con `{"isadmin": true}` che verifica perfettamente.
+
+Il trucco classico: puntare `kid` a un file **vuoto o prevedibile** (es. un README noto, o un path che dà contenuto vuoto). Se la chiave è «vuoto», firmo con chiave vuota. Il controllo `isadmin` è completamente aggirato.
+
+<FraseChiave>La firma del JWT doveva garantire «questo token è autentico». Ma se l'attaccante sceglie con quale chiave lo verifichi, la firma non garantisce più niente. Non far mai scegliere al client la chiave di verifica.</FraseChiave>
+
+</Passo>
+
+<Passo numero={4} titolo="Bug 2: playlist abuse → lettura file locale">
+
+Ora che sei admin, c'è una funzione che accetta una **playlist** (formato HLS/m3u8 — quello dello streaming video). Il codice valida il *nome* del file (una regex blocca il traversal sul filename), **ma non limita mai il `content`** della playlist.
+
+### Il ragionamento
+
+Una playlist m3u8 è un file di testo che elenca «segmenti» (pezzi di video) da caricare. Ma i segmenti si possono riferire a file locali con lo schema `file://`:
+
+```
+#EXTM3U
+#EXTINF:10,
+file:///etc/passwd
+```
+
+Il player risolve diligentemente la playlist, legge il «segmento» referenziato via `file://`, e il gestore ti restituisce il primo megabyte nella risposta. **Questo è un primitivo di lettura file locale arbitraria** — esattamente ciò che useresti per leggere un file sensibile, o per leggere `/tmp/keys/*` e rendere il Bug 1 ancora più facile.
+
+<Flusso passi="La regex controlla il FILENAME (blocca il traversal lì), ma NON controlla il CONTENT, playlist malevola con file:///percorso/file/sensibile, il player legge il file locale → il contenuto torna nella risposta" evidenzia="ma NON controlla il CONTENT" />
+
+> **Il difetto:** hanno protetto *una* via d'ingresso (il filename) ma ne hanno lasciata aperta un'altra (il contenuto). È lo stesso pattern dell'`X-Original-URL` (controlli una cosa, l'azione ne usa un'altra) e del parser differential: *la protezione guarda nel posto sbagliato.*
+
+</Passo>
+
+<Passo numero={5} titolo="La catena completa">
+
+<Flusso passi="1. kid traversal → chiave nota, 2. forgio JWT isadmin:true, 3. da admin invio playlist malevola, 4. file:// legge il file che voglio, 5. il contenuto torna nella pagina" evidenzia="5. il contenuto torna nella pagina" />
+
+Due bug che da soli sarebbero limitati (un file read senza privilegi, o un token forge senza niente da fare) **insieme** danno accesso completo ai file del server.
+
+</Passo>
+
+<Passo numero={6} titolo="Come difendersi">
+
+- **JWT `kid`:** non usare mai un valore controllato dal client come percorso file. Il `kid` va validato contro una **lista chiusa** di chiavi conosciute (allowlist), mai concatenato in un path. E in generale: non far scegliere al client l'algoritmo o la chiave di verifica.
+- **Playlist / file read:** validare **tutto** l'input, non solo il filename. Bloccare lo schema `file://` nei contenuti; limitare il player a schemi sicuri (solo `http`/`https` verso domini permessi). *Se validi solo una parte dell'input, l'altra è la falla.*
+- **Principio generale:** quando proteggi un input, chiediti *«quali altri modi ha questo dato di influenzare il sistema?»* — il filename era protetto, il contenuto no.
+
+</Passo>
+
+## Cosa portarti dietro (il metodo)
+
+<LatoHacker importante>
+1. **I bug gravi sono catene.** Un file-read + un token-forge, da soli, sono mezze cose. Insieme = compromissione. Il hunter vede le connessioni.
+2. **Input in un percorso file = sospetto immediato.** Ogni volta che un valore controllato dall'utente finisce in `open()`, `load()`, un path → pensa path traversal.
+3. **«Hanno validato il filename ma non il contenuto.»** La protezione parziale è il nemico: cerca sempre la via d'ingresso che il controllo *non* copre.
+4. **Il filo di sempre:** il sistema si fida di qualcosa che il client controlla (il `kid`, il contenuto della playlist). *Se lo scrivi tu, non è una prova.* — lo stesso principio della lezione [Authentication](/lezioni/02-vulnerabilita-web/02-autenticazione).
+</LatoHacker>
+
+<Bottino
+  punti={[
+    "HS256 è simmetrico: chi controlla la chiave forgia token validi. Non far mai scegliere al client la chiave di verifica.",
+    "Input in un percorso file = path traversal: sospetto immediato ogni volta che un valore utente finisce in un open()/load().",
+    "La protezione parziale è il nemico: se validi solo una parte dell'input (il filename, non il contenuto), l'altra è la falla."
+  ]}
+/>
+
+<Callout tipo="suggerimento" titolo="Allenati sul lab">
+Questa catena nasce da un caso reale (anonimizzato). I singoli concetti li pratichi sui lab gratuiti e legali della Web Security Academy di PortSwigger: [JWT attacks](https://portswigger.net/web-security/jwt) e [Path traversal](https://portswigger.net/web-security/file-path-traversal). *Il valore è il ragionamento: vedere la catena, riconoscere l'input non fidato in un percorso, cercare la via che il controllo non copre.*
+</Callout>
+
+<Domande titolo="Domande da farti davanti a una catena">
+- Il client può scegliere la **chiave** o l'**algoritmo** di verifica? (Non dovrebbe mai.)
+- C'è un valore controllato dall'utente che finisce in un **percorso file** (`open`, `load`, `kid`)?
+- La validazione copre **tutto** l'input, o solo una parte (il filename ma non il contenuto)?
+- «Quali **altri modi** ha questo dato di influenzare il sistema?»
+- Due mezzi bug: cosa ottengo se li **concateno**?
+</Domande>
+
+<ProssimaLezione
+  titolo="Hai finito il Modulo 2!"
+  anteprima="Hai visto le vulnerabilità web dal lato di chi attacca — e di chi difende. Il prossimo passo è la pratica guidata sui lab di PortSwigger e le sessioni live. Ci vediamo lì."
+/>
+
+<Chiusura>
+Due catene, un solo insegnamento: le crepe piccole, da sole, non fanno paura. Il mestiere è vedere come si tengono per mano. **Non sei sola.** 🔓
+</Chiusura>

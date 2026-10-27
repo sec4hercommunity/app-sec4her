@@ -49,6 +49,13 @@ export function BadgeStatoLezione({ stato }: { stato: StatoLezione }) {
   return <span className={`${PILLOLA} border-white/15 text-text/60`}>Da fare</span>
 }
 
+// Badge "Avanzato": pastiglia ambra per le lezioni di livello avanzato (bloccate finché non si finiscono le basi).
+export function BadgeAvanzato() {
+  return (
+    <span className={`${PILLOLA} border-[#f0b35b]/60 bg-[#f0b35b]/10 text-[#f0b35b]`}>⚡ Avanzato</span>
+  )
+}
+
 // Cerchio della mappa e dell'elenco lezioni: verde con ✓, viola con ▶ e bagliore, grigio con il lucchetto.
 export function CerchioStato({
   stato,

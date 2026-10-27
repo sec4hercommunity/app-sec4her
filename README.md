@@ -642,11 +642,23 @@ successiva arrivano dal **frontmatter** del file (`lib/catalogo.ts` li legge dur
 - **Modulo 1 – Basi di rete e web** (`content/lezioni/01-basi-rete-web/`):
   1. **Networking: le basi** (15 min, 50 XP) – prova: **quiz** (5 domande, serve il 70%, cioè 4 giuste);
   2. **Intercettiamo un login** (20 min, 50 XP) – prova: **flag**.
-- **Modulo 2 – Vulnerabilità web**: lezioni di esempio senza testo (*"note in preparazione"*), con il pulsante
-  "Segna come completata".
+- **Modulo 2 – Vulnerabilità web** (`content/lezioni/02-vulnerabilita-web/`): 6 lezioni MDX con quiz (3-5 domande
+  sui concetti, soglia 70%, spiegazione dopo ogni risposta):
+  1. **Controllo degli accessi e privilege escalation** (Base);
+  2. **Vulnerabilità di autenticazione** (Base);
+  3. **Cross-Site Scripting (XSS)** (Base);
+  4. **Injection, SSRF e secrets nel codice** (Intermedio);
+  5. **Parser differential + SSTI → RCE** (Avanzato 🔒);
+  6. **JWT kid traversal + lettura file locale** (Avanzato 🔒).
+  Sono teoriche (niente flag): i lab veri si fanno su **PortSwigger** e nelle sessioni live. Ogni lezione ha un
+  riquadro **"Allenati sul lab"** (link alla Web Security Academy, in `config/links.ts → LINKS.portswigger`) e le
+  **"Domande da farti"**.
 - **Lucchetti:** la prima lezione di un modulo aperto è libera; le altre si sbloccano quando la precedente è
   completata. Quindi **la lezione 2 si apre solo dopo aver superato il quiz della lezione 1**. Le lezioni bloccate
   non sono cliccabili e, aprendole dall'indirizzo, mostrano "Lezione bloccata".
+- **Lezioni avanzate:** chi ha `livello: "Avanzato"` nel frontmatter (lezioni 5 e 6) mostra un badge **"⚡ Avanzato"**
+  e resta bloccato finché non sono completate **tutte le lezioni base del modulo** (il messaggio è *"Completa prima
+  le basi del modulo"*). La regola è in `lib/lezioni.ts` (`avanzata`, `basiDaCompletare`, `lezioneSbloccata`).
 - **XP:** superare la prova (o segnare la lezione come completata) dà gli XP scritti nel frontmatter.
 
 > 🔒 **Solo per la grafica:** oggi risposte del quiz e flag sono scritte nel frontmatter e controllate nel browser,
@@ -733,6 +745,7 @@ componenti può usare Markdown normale (grassetto, elenchi, `codice`).
 | `Compito` | Il compito per casa | `<Compito>Apri **F12** → Rete.</Compito>` |
 | `ProssimaLezione` | Anteprima della successiva, con lucchetto finché la prova non è superata (il link arriva da `prossima`) | `<ProssimaLezione titolo="Intercettiamo un login" anteprima="Ci mettiamo in mezzo." />` |
 | `Chiusura` | Frase finale centrata | `<Chiusura>**Non sei sola.** 🔓</Chiusura>` |
+| `FraseChiave` | Evidenzia una frase-chiave da ricordare (riquadro verde con 🔑) | `<FraseChiave>autenticazione = chi sei · sessione = ti ricordo · controllo accessi = cosa puoi fare</FraseChiave>` |
 | `MappaConcetti` | I concetti in alto, fissi; il concetto N si illumina quando arrivi al `Passo` N | `<MappaConcetti concetti={["Rete", "IP e porte", "DNS"]} />` |
 
 **Interattivi** (`components/lezione/Interattivi.tsx`)
@@ -747,6 +760,14 @@ componenti può usare Markdown normale (grassetto, elenchi, `codice`).
 | `CartolinaVsBusta` | Interruttore HTTP/HTTPS: in chiaro o cifrato con il lucchetto | `<CartolinaVsBusta messaggio="username=giulia&password=segreta123" />` |
 | `ViaggioCompleto` | ▶ anima i passi uno alla volta, con avanti/indietro | `<ViaggioCompleto passi={["Digiti sito.com", "Il DNS trova l'IP"]} />` |
 | `SimulatoreProxy` | Sito finto + proxy stile Caido: intercetta, spiega, modifica, Forward/Drop, checklist e flag (vedi sopra) | ``<SimulatoreProxy sito="Biblioteca Bug" utenteDemo={{ username: "giulia", password: "libri2026" }} passi={[{ id: "intercept", istruzione: "…" }]} richiesta={`POST /login …`} rispostaUser={`…`} rispostaAdmin={`…`} rispostaErrore={`…`} />`` |
+
+**Vulnerabilità web** (Modulo 2 — `components/lezione/VisoreRichiesta.tsx`, `DueGuardie.tsx`, `SourceSink.tsx`)
+
+| Componente | Cosa fa | Esempio |
+| --- | --- | --- |
+| `VisoreRichiesta` | Richiesta HTTP stile Burp/Caido con parti evidenziabili: ogni voce di `evidenzia` cerca il suo `testo` nella richiesta e lo rende una pastiglia cliccabile (`colore`: viola, verde, ambra, cremisi) che mostra la `spiegazione`. Per IDOR (`id` nell'URL), `X-Forwarded-For`, cookie di sessione, `role=`, `X-Original-URL` | ``<VisoreRichiesta titolo="GET /my-account?id=carlos" richiesta={`GET /my-account?id=carlos HTTP/1.1\nCookie: session=WIENER`} evidenzia={[{ testo: "id=carlos", colore: "ambra", spiegazione: "L'id lo scrivi tu." }, { testo: "session=WIENER", colore: "verde", spiegazione: "La sessione è la tua identità vera." }]} />`` |
+| `DueGuardie` | Lo stesso input letto da due componenti con regole diverse (front-end vs back-end, validatore vs router): premendo **▶ Manda l'input** ognuno mostra cosa *vede* e il suo verdetto → il disaccordo sfruttato. `tono`: verde, ambra, cremisi. Per parser differential e `X-Original-URL` | ``<DueGuardie input="POST / · X-Original-URL: /admin/deleteUser" sinistra={{ nome: "FRONT-END", regola: "guarda solo la riga", vede: "/", esito: "fa passare", tono: "ambra" }} destra={{ nome: "BACK-END", regola: "onora l'header", vede: "/admin/deleteUser", esito: "esegue", tono: "cremisi" }} conclusione="l'header bypassa il controllo." />`` |
+| `SourceSink` | Una pallina "input" va da SOURCE a SINK; l'interruttore **"c'è una guardia?"** decide se in mezzo c'è un sanitizer → ✓ sicuro / 💥 vulnerabile. Per Injection / SSRF (e in generale source → sink) | `<SourceSink source="form / URL" sink="query al database" guardia="query parametrizzata" sicuro="Il dato resta un valore." vulnerabile="L'input diventa sintassi." />` |
 
 Restano disponibili anche `Callout` (`<Callout tipo="nota">…</Callout>`), `Schema`, `Flusso` e il blocco di codice con
 la lingua `http`, che mostra una richiesta o una risposta in stile terminale.
@@ -776,7 +797,7 @@ la lingua `http`, che mostra una richiesta o una risposta in stile terminale.
 
 | File | Cosa contiene |
 | --- | --- |
-| `content/lezioni/01-basi-rete-web/*.mdx` | ✍️ **Le lezioni** (testo + frontmatter) |
+| `content/lezioni/<modulo>/*.mdx` | ✍️ **Le lezioni** (testo + frontmatter): Modulo 1 (basi rete/web) e Modulo 2 (vulnerabilità web) |
 | `lib/catalogo.ts` | Legge sul server i file MDX di ogni modulo e crea l'elenco delle lezioni |
 | `lib/lezioni.ts` | Tipi e regole: lettura del frontmatter, stati, lucchetti, XP, soglia del quiz |
 | `data/lezioni-mock.ts` | ⚠️ **Dati finti**: `MODULI_BASE` (i 7 moduli), progressi iniziali, sessioni live |

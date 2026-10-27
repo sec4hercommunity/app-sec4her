@@ -31,6 +31,21 @@ export const LINKS = {
     meet: 'https://meet.google.com/SOSTITUISCI',
     discord: 'https://discord.gg/SOSTITUISCI',
   },
+
+  // Web Security Academy di PortSwigger: i lab gratuiti dove si fa pratica vera (riquadro "Allenati sul lab"
+  // nelle lezioni del Modulo 2). Sono URL pubblici reali, non segnaposto. Le stesse URL sono usate nei file MDX.
+  portswigger: {
+    accessControl: 'https://portswigger.net/web-security/access-control',
+    authentication: 'https://portswigger.net/web-security/authentication',
+    xss: 'https://portswigger.net/web-security/cross-site-scripting',
+    sqlInjection: 'https://portswigger.net/web-security/sql-injection',
+    nosqlInjection: 'https://portswigger.net/web-security/nosql-injection',
+    ssrf: 'https://portswigger.net/web-security/ssrf',
+    ssti: 'https://portswigger.net/web-security/server-side-template-injection',
+    jwt: 'https://portswigger.net/web-security/jwt',
+    pathTraversal: 'https://portswigger.net/web-security/file-path-traversal',
+    tuttiILab: 'https://portswigger.net/web-security/all-labs',
+  },
 } as const
 
 // Attributi da mettere su ogni link esterno: si apre in una nuova scheda senza passare informazioni al sito aperto.

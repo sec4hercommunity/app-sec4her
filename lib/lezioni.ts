@@ -15,7 +15,8 @@ export type Lezione = {
   durataMinuti: number
   xp: number
   ordine: number
-  livello?: string // es. "Da zero"
+  livello?: string // es. "Da zero", "Avanzato"
+  avanzata?: boolean // true = lezione avanzata: si sblocca solo quando tutte le lezioni base del modulo sono fatte
   descrizione?: string
   sessioneLive?: string // id di una sessione in SESSIONI_LIVE
   prossima?: string // slug della lezione successiva nello stesso modulo
@@ -56,12 +57,21 @@ export function statoModulo(modulo: Modulo, completate: ReadonlySet<string>): St
   return 'in-corso'
 }
 
+// true se restano lezioni BASE (non avanzate) del modulo ancora da completare.
+// Le lezioni avanzate si sbloccano solo quando questo è false ("completa prima le basi del modulo").
+export function basiDaCompletare(modulo: Modulo, completate: ReadonlySet<string>): boolean {
+  return modulo.lezioni.some((l) => !l.avanzata && !completate.has(idLezione(modulo.slug, l.slug)))
+}
+
 // Lucchetti: la prima lezione di un modulo aperto è sempre libera; le altre si sbloccano
 // quando la lezione precedente è completata (per le lezioni con prova: quando la prova è superata).
+// Le lezioni avanzate hanno un vincolo in più: restano bloccate finché non sono fatte tutte le basi del modulo.
 export function lezioneSbloccata(modulo: Modulo, slug: string, completate: ReadonlySet<string>): boolean {
   if (!modulo.aperto) return false
   const i = modulo.lezioni.findIndex((l) => l.slug === slug)
-  if (i <= 0) return i === 0
+  if (i < 0) return false
+  if (modulo.lezioni[i].avanzata && basiDaCompletare(modulo, completate)) return false
+  if (i === 0) return true
   return completate.has(idLezione(modulo.slug, modulo.lezioni[i - 1].slug))
 }
 
@@ -144,6 +154,7 @@ export function lezioneDaFrontmatter(raw: unknown, slugFile: string): Lezione {
     xp: numero(p.xp) ?? 0,
     ordine: numero(p.ordine) ?? 999,
     livello: testo(p.livello),
+    avanzata: testo(p.livello)?.toLowerCase() === 'avanzato',
     sessioneLive: testo(p.sessioneLive),
     prossima: testo(p.prossima),
     prova: leggiProva(p.prova),

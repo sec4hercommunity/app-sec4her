@@ -1,0 +1,232 @@
+---
+titolo: "Parser differential + SSTI → RCE"
+modulo: "02-vulnerabilita-web"
+slug: "05-parser-differential-ssti"
+ordine: 5
+livello: "Avanzato"
+durata: "30 min"
+xp: 80
+prossima: "06-jwt-kid-traversal-lfi"
+prova:
+  tipo: "quiz"
+  soglia: 70
+  domande:
+    - domanda: "Cos'è un «parser differential»?"
+      opzioni:
+        - "Un parser più veloce degli altri"
+        - "Due pezzi di codice che leggono lo stesso input con regole diverse: sfrutti il loro disaccordo"
+        - "Un errore di sintassi nel codice"
+      corretta: 1
+      spiegazione: "Validatore vs router, front-end vs back-end: quando due componenti interpretano lo stesso input diversamente, nasce un bypass. È lo stesso DNA dell'X-Original-URL."
+    - domanda: "Cos'è un'SSTI (Server-Side Template Injection)?"
+      opzioni:
+        - "Un attacco al browser della vittima"
+        - "L'input dell'utente finisce nel template come modello/codice invece che come dato, e il motore lo esegue"
+        - "Un furto di cookie"
+      corretta: 1
+      spiegazione: "Input trattato come dato = sicuro (il motore lo mostra). Input trattato come codice/modello = letale (lo esegue): può portare a RCE, il controllo della macchina."
+    - domanda: "Nell'SSTI si prova prima con qualcosa come «7*7». Perché?"
+      opzioni:
+        - "Per fare danni subito"
+        - "Per confermare che l'input viene eseguito (se esce 49, non il testo) prima di tentare qualsiasi cosa seria"
+        - "Perché è il payload finale"
+      corretta: 1
+      spiegazione: "Prova prima, esegui dopo: il test innocuo dimostra che l'input è valutato come codice. Non si spara il payload finale alla cieca."
+    - domanda: "Perché questa challenge è pericolosa quanto lo è?"
+      opzioni:
+        - "Perché usa Ruby"
+        - "Perché due bug innocui da soli, concatenati, diventano RCE: il bypass arriva all'SSTI che esegue codice"
+        - "Perché il sito era lento"
+      corretta: 1
+      spiegazione: "I bug gravi spesso sono catene, non falle singole. Un parser differential è «solo» un bypass; un SSTI da solo va raggiunto. Insieme = RCE."
+    - domanda: "Qual è la difesa corretta contro il parser differential?"
+      opzioni:
+        - "Scrivere una regex più lunga"
+        - "Validare con lo STESSO parser con cui l'app poi agisce: un solo parser per input"
+        - "Bloccare tutte le email con parentesi"
+      corretta: 1
+      spiegazione: "Due interpreti diversi = disaccordo = bug. Si parsa una volta sola, si valida il risultato parsato. Per l'SSTI: template statici, dati in slot definiti (come le prepared statement)."
+---
+
+<Intro
+  etichetta="Lezione sec4her · Modulo 2 · livello avanzato · da un caso reale di bug chaining 🔓"
+  sottotitolo="Due bug piccoli, innocui da soli, che concatenati diventano Remote Code Execution. Questo è il livello del bug bounty vero: non UNA falla, ma la catena."
+/>
+
+<Callout tipo="attenzione" titolo="Vulnerabilità avanzata">
+Presuppone di aver capito prima le basi (HTTP, richieste/risposte, input non fidato — i primi quattro capitoli di questo modulo). Qui il valore non è «copiare il payload», è **vedere come si ragiona concatenando due bug**.
+</Callout>
+
+<Promessa>
+Fino a qui ogni lezione era un bug per volta. Adesso fai il salto che separa chi risolve un lab da chi caccia davvero: vedere come due debolezze, da sole trascurabili, si incastrano in qualcosa di devastante. Impari il ragionamento della catena, non il payload.
+</Promessa>
+
+<MappaConcetti
+  concetti={["I concetti base", "Due bug in catena", "Bug 1: parser differential", "Bug 2: SSTI", "Dalla prova al file", "La difesa"]}
+/>
+
+## Il filo
+
+<Filo>Input dell'utente trattato come codice invece che come dato. E il disaccordo tra due parser è una miniera.</Filo>
+
+<Passo numero={1} titolo="I concetti che servono prima">
+
+Tre parole che useremo di continuo. Se le hai chiare, la lezione fila.
+
+### Cos'è un «parser»
+
+Un **parser** è un pezzo di codice che *legge* un testo e lo *interpreta* secondo certe regole, per estrarne un significato. Esempio quotidiano: quando scrivi `mario.rossi@gmail.com`, un parser email capisce «la parte prima della @ è l'utente, quella dopo è il dominio». Il parser non «vede» il testo come lo vedi tu — lo smonta secondo le *sue* regole. E qui sta il seme del problema: **due parser diversi possono smontare lo stesso testo in modo diverso.**
+
+### Cos'è un «template engine» (e l'interpolazione)
+
+Un **template engine** è uno strumento che costruisce testo (una pagina, un'email) partendo da un modello con dei «buchi» da riempire. Esempio:
+
+```
+Ciao {nome}, benvenuta!
+```
+
+Il motore sostituisce `{nome}` con il valore vero → «Ciao Giulia, benvenuta!». I «buchi» si chiamano **slot** o **placeholder**. Il motore è potente: certi placeholder non si limitano a inserire testo, possono *eseguire codice* (calcoli, logica). Questo è comodo per gli sviluppatori — ed è esattamente ciò che l'attaccante abusa.
+
+### Cos'è l'SSTI
+
+**SSTI = Server-Side Template Injection** — «iniezione nel template lato server». Succede quando **l'input dell'utente finisce dentro il template come se fosse parte del modello**, invece che come semplice dato da inserire in uno slot. Se il motore lo *valuta* (lo esegue) invece di *stamparlo* (mostrarlo come testo), l'attaccante può far eseguire codice sul server. È tra le vulnerabilità più gravi: porta alla **RCE** (Remote Code Execution = esecuzione di codice da remoto), cioè il controllo della macchina.
+
+<FraseChiave>L'input trattato come dato è sicuro (il motore lo mostra). L'input trattato come codice/modello è letale (il motore lo esegue). SSTI è quando un sito confonde le due cose.</FraseChiave>
+
+</Passo>
+
+<Passo numero={2} titolo="Il quadro: due bug in catena">
+
+Questa challenge non è un bug solo. Sono **due bug concatenati**:
+
+1. Un **parser differential** per superare il cancello (il controllo che dovrebbe fermarti).
+2. Una **SSTI** dall'altra parte del cancello, che dà esecuzione di codice.
+
+<Flusso passi="Input dell'attaccante (una stringa 'email'), 🚪 BUG 1: parser differential supera il controllo, 📄 BUG 2: SSTI → codice nel template, 💥 RCE sul server" evidenzia="💥 RCE sul server" />
+
+**Il contesto:** un flusso di iscrizione/invito. L'utente invia un indirizzo email per «iscriversi e ricevere un invito». Quell'**unica stringa** è tutta la superficie d'attacco: passa attraverso il *validatore*, il *router di posta*, e infine finisce nel *template dell'invito*.
+
+</Passo>
+
+<Passo numero={3} titolo="Bug 1: il parser differential">
+
+L'idea centrale, in una frase: **due pezzi di codice leggono lo stesso indirizzo con regole diverse — e tu sfrutti il disaccordo.** (Ti ricorda qualcosa? È lo stesso DNA del lab `X-Original-URL` in [Controllo accessi](/lezioni/02-vulnerabilita-web/01-controllo-accessi): front-end e back-end leggevano l'URL in modo diverso. Qui sono validatore e router che leggono l'email in modo diverso. Stesso principio, vestito nuovo.)
+
+### I due «cancelli» e cosa vogliono
+
+- **Cancello 1 — il validatore.** Usa una regex rozza. Non capisce le email: cerca una `@`, poi afferra lettere/cifre/punti/trattini finché incontra un carattere fuori da quel set, e **si ferma**. La sua debolezza: *qualsiasi carattere legale in un'email ma non in quel set lo fa fermare presto o guardare nel punto sbagliato.* Il validatore blocca se vede il dominio riservato → quindi la mia stringa **non deve fargli vedere** quel dominio.
+- **Cancello 2 — il router** (la libreria `mail`). Un parser RFC 5322 completo: capisce i *display name*, i **commenti tra parentesi**, le parti quotate, i gruppi. Decide quale template ti arriva. Per ricevere l'invito, **deve instradare** al dominio riservato.
+
+### La contraddizione da risolvere
+
+La stringa deve fare **due cose opposte insieme**: il validatore **NON** deve pensare che il dominio sia quello riservato (o ti blocca), e il router **DEVE** risolvere proprio a quel dominio riservato (o ti rifiuta).
+
+### La chiave: i commenti RFC 5322
+
+Lo standard email permette **commenti tra parentesi** dentro l'indirizzo. Ecco il trucco: la regex rozza incontra la `(` subito dopo la `@` come un muro e **si ferma lì** — non arriva mai al dominio vero, quindi il controllo «contiene il dominio riservato?» risulta **falso** e non blocca. La libreria `mail`, invece, tratta il commento come *invisibile* e instrada comunque al dominio vero.
+
+Input vincente (dominio generico per la lezione):
+
+```
+"Bob" <info@(commento)dominio-riservato.com>
+```
+
+<DueGuardie
+  input={`"Bob" <info@(commento)dominio-riservato.com>`}
+  sinistra={{ nome: "VALIDATORE (regex rozza)", regola: "cerca @ poi lettere/punti, si ferma al primo carattere strano", vede: "info@", esito: "non vede il dominio riservato → non blocca", tono: "ambra" }}
+  destra={{ nome: "ROUTER (libreria mail · RFC 5322)", regola: "capisce i commenti tra parentesi e li ignora", vede: "dominio-riservato.com", esito: "instrada al dominio riservato → sei dentro", tono: "cremisi" }}
+  conclusione="validatore e router leggono la stessa email in modo diverso: il commento RFC supera il cancello."
+/>
+
+Il validatore legge fino a `(` e non vede `dominio-riservato.com`. Il router ignora `(commento)` e instrada a `dominio-riservato.com`. **Disaccordo sfruttato** → sei dentro il flusso dell'invito.
+
+</Passo>
+
+<Passo numero={4} titolo="Bug 2: l'SSTI">
+
+Una volta dentro, il template dell'invito fa (in Ruby):
+
+```ruby
+name = ... display_name dell'indirizzo ...
+ERB.new("Welcome to the Hacker Club #{name}!").result(binding)
+```
+
+### Perché è vulnerabile — il dettaglio critico
+
+`#{name}` è **interpolazione di stringa Ruby**, e avviene **PRIMA** che `ERB.new` veda la stringa. In pratica: il display name viene *saldato dentro* il corpo del template per primo, e solo dopo ERB legge tutto ed esegue qualsiasi marcatore che trova.
+
+<Flusso passi="display name (lo controllo IO), 1. Ruby interpola: il nome ENTRA nel template, 2. ERB legge il template ed esegue i marcatori, se il nome contiene codice → viene ESEGUITO" evidenzia="se il nome contiene codice → viene ESEGUITO" />
+
+Vedi il problema? Il mio input (il display name) non riempie uno slot *dopo* — diventa **parte del modello stesso**. È esattamente la definizione di SSTI del passo 1: input trattato come codice, non come dato.
+
+### La conferma (come si prova un SSTI, sempre)
+
+Non si spara subito il payload finale. Si **prova** che l'input viene eseguito, con un test innocuo: si mette come display name una piccola espressione aritmetica (il classico «sette per sette»). Se l'output mostra `49` (e non il testo dell'espressione), è la prova: *l'input è valutato come Ruby, non stampato come testo.* Questo test serve a dire «sì, qui si esegue» prima di fare qualsiasi altra cosa.
+
+</Passo>
+
+<Passo numero={5} titolo="Dalla prova alla lettura del file (e il rischio)">
+
+Confermata l'esecuzione, si passa a qualcosa di utile — per esempio leggere un file, con un marcatore del tipo `File.read('flag.txt')`.
+
+### L'ostacolo (e la lezione pratica)
+
+Il primo tentativo usava i **doppi apici** attorno al nome del file. Non ha funzionato: i doppi apici *dentro* la lettura collidevano con i doppi apici che avvolgono il display name → l'email si rompeva (la libreria `mail` non riconosceva più l'indirizzo e i metodi smettevano di funzionare). **Fix:** usare i **singoli apici** → nessuna collisione → il parser lascia passare il payload intatto ed ERB legge il file.
+
+<Callout tipo="suggerimento" titolo="Lezione trasferibile">
+Nei payload dentro strutture quotate, attenzione alla **collisione di apici**. Se l'esterno usa `"`, dentro usa `'` (o viceversa). Un dettaglio di punteggiatura fa fallire tutto in silenzio — esattamente come lo zero-padding nel brute-force dell'OTP, o lo spazio nell'header `X-Original-URL`. *I dettagli di sintassi non perdonano.*
+</Callout>
+
+### Il rischio (perché questo è grave)
+
+<Flusso passi="Authorization bypass (raggiungi un flusso riservato), SSTI (esecuzione codice arbitrario), RCE sul server (leggi file, segreti, env vars), Compromissione totale (movimento laterale, esfiltrazione dati)" evidenzia="Compromissione totale (movimento laterale, esfiltrazione dati)" />
+
+La **RCE** significa leggere file arbitrari, accedere a segreti e variabili d'ambiente, potenzialmente prendere il controllo completo del server. Questo è il motivo per cui l'SSTI è classificata tra le vulnerabilità più critiche: non «vedi i dati di un altro» (come un IDOR) — *esegui codice sulla loro macchina*.
+
+</Passo>
+
+<Passo numero={6} titolo="Come difendersi (remediation)">
+
+- **Parser differential:** valida con lo **STESSO parser** con cui l'applicazione poi agisce. Non scrivere una regex fatta a mano per controllare l'indirizzo e poi passare la stringa grezza a un parser RFC completo. *Parsa una volta sola, valida il risultato parsato, e rifiuta gli indirizzi che non «tornano».* La regola generale: **un solo parser per input** (vale anche per gli URL, i path, qualsiasi cosa — due interpreti diversi = disaccordo = bug).
+- **SSTI:** non costruire mai un template interpolando l'input dentro la stringa del template. Passa i dati utente come **variabile legata** che il motore tratta come *dato*, oppure sanifica e fai escape rigoroso. **I template restano statici; i dati riempiono slot definiti.** (È lo stesso principio della prepared statement contro la SQL injection: separa il codice dai dati.)
+
+</Passo>
+
+## Cosa portarti dietro (il metodo)
+
+<LatoHacker importante>
+1. **I bug gravi spesso sono catene, non falle singole.** Un parser differential da solo è «solo» un bypass; un SSTI da solo richiede di arrivarci. Insieme = RCE. Il bug hunter bravo vede *le catene*, non i singoli pezzi.
+2. **Il disaccordo tra due parser è una miniera.** Ogni volta che due componenti leggono lo stesso input con regole diverse (validatore vs router, front-end vs back-end), c'è potenziale per un bypass. Chiediti sempre: *«chi altro legge questo input, e con quali regole?»*
+3. **Prova prima, esegui dopo.** Il test innocuo conferma l'esecuzione prima di tentare qualsiasi cosa seria. Non sparare il payload finale alla cieca.
+4. **I dettagli di sintassi decidono.** Apici che collidono, spazi, padding: un carattere fuori posto fa fallire tutto in silenzio.
+5. **Il filo di sempre:** input dell'utente trattato come *codice* invece che come *dato*. È la radice dell'SSTI, della SQLi, della XSS. Lingue diverse, stesso peccato originale.
+</LatoHacker>
+
+<Bottino
+  punti={[
+    "I bug gravi sono catene: due debolezze innocue (parser differential + SSTI) insieme danno RCE.",
+    "Il disaccordo tra due parser è una miniera: chiediti sempre chi altro legge questo input e con quali regole.",
+    "Prova prima, esegui dopo; e difenditi con un solo parser per input e template statici con dati in slot."
+  ]}
+/>
+
+<Callout tipo="suggerimento" titolo="Allenati sul lab">
+Questa catena nasce da un caso reale (anonimizzato). Il concetto SSTI lo pratichi sui lab gratuiti e legali della [Web Security Academy di PortSwigger — Server-side template injection](https://portswigger.net/web-security/server-side-template-injection). *Il valore non è il payload, è il ragionamento: vedere la catena, sfruttare il disaccordo, provare prima di eseguire.*
+</Callout>
+
+<Domande titolo="Domande da farti davanti a una catena">
+- Chi **altro** legge questo input, e con **quali regole**? Due parser possono essere in disaccordo?
+- Questo input finisce in un **template** come dato, o diventa parte del **modello**?
+- Prima di eseguire: ho **provato** che l'input viene valutato (un test innocuo)?
+- Ci sono **collisioni di sintassi** (apici, spazi) che fanno fallire il payload in silenzio?
+- Due bug che da soli sono «mezzi bug»: cosa succede se li **concateno**?
+</Domande>
+
+<ProssimaLezione
+  titolo="JWT kid traversal + lettura file locale"
+  anteprima="Un'altra catena: forgi un token da admin sfruttando il campo kid, poi leggi qualsiasi file del server. Due mezze cose che insieme diventano compromissione."
+/>
+
+<Chiusura>
+La catena è ciò che separa chi risolve un lab da chi caccia. Non cercare LA falla: cerca come due piccole crepe si tengono per mano. **Non sei sola.** 🔓
+</Chiusura>

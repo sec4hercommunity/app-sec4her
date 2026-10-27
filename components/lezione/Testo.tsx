@@ -27,6 +27,24 @@ export function Promessa({ children }: { children: ReactNode }) {
   )
 }
 
+// Frase-chiave: una frase da ricordare, ben visibile, in mezzo al testo.
+// <FraseChiave>autenticazione = chi sei · sessione = ti ricordo · controllo accessi = cosa puoi fare</FraseChiave>
+export function FraseChiave({ children }: { children: ReactNode }) {
+  return (
+    <aside className="my-8 flex gap-4 rounded-2xl border-l-4 border-hack bg-hack/[0.1] px-5 py-5 shadow-[0_0_40px_-18px_rgba(31,138,76,0.9)] sm:px-6">
+      <span className="mt-0.5 shrink-0 font-mono text-xl text-hack" aria-hidden="true">
+        🔑
+      </span>
+      <div className="min-w-0">
+        <p className="font-mono text-[11px] font-bold tracking-[0.3em] text-hack">FRASE-CHIAVE</p>
+        <div className="mt-1 font-mono text-base leading-relaxed font-bold text-text sm:text-lg [&>p]:my-0">
+          {children}
+        </div>
+      </div>
+    </aside>
+  )
+}
+
 // Il filo: la frase chiave della lezione, in grande.
 export function Filo({ children }: { children: ReactNode }) {
   return (

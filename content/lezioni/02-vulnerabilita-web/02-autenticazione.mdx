@@ -1,0 +1,304 @@
+---
+titolo: "Vulnerabilità di autenticazione"
+modulo: "02-vulnerabilita-web"
+slug: "02-autenticazione"
+ordine: 2
+livello: "Base"
+durata: "35 min"
+xp: 50
+sessioneLive: "sessione-02-owasp"
+prossima: "03-xss"
+prova:
+  tipo: "quiz"
+  soglia: 70
+  domande:
+    - domanda: "Cos'è la «username enumeration»?"
+      opzioni:
+        - "Provare mille password sullo stesso account"
+        - "Notare piccole differenze nel comportamento del sito per capire quali username esistono davvero"
+        - "Indovinare l'email dell'admin"
+      corretta: 1
+      spiegazione: "Status code, messaggio d'errore o tempo di risposta leggermente diversi tradiscono se un username è valido. La difesa: stesso codice, stesso messaggio, stesso tempo in tutti i casi."
+    - domanda: "Il sito blocca l'IP dopo troppi tentativi, ma lo capisce leggendo l'header X-Forwarded-For. Perché è un errore?"
+      opzioni:
+        - "Perché l'header è scritto dall'utente: se lo scrivi tu, non è una prova"
+        - "Perché X-Forwarded-For è deprecato"
+        - "Perché andava usato il cookie al posto dell'header"
+      corretta: 0
+      spiegazione: "Regola d'oro: se lo scrivi tu, non è una prova. L'attaccante cambia X-Forwarded-For a ogni richiesta e ogni tentativo sembra da un IP nuovo."
+    - domanda: "In un «simple bypass» della 2FA il codice non serve nemmeno. Qual è il difetto?"
+      opzioni:
+        - "Il codice era troppo corto"
+        - "Il server ti considera loggata dopo la password, non dopo il codice: basta navigare all'URL interno"
+        - "La 2FA era disattivata"
+      corretta: 1
+      spiegazione: "Lo stato «loggato» va dato dopo ENTRAMBI i fattori. Se arriva già dopo la password, il secondo fattore è un cartello, non una serratura: si salta navigando alla pagina interna."
+    - domanda: "In un cookie trovi la password «protetta» con Base64. Cosa significa?"
+      opzioni:
+        - "È cifrata in modo sicuro"
+        - "Base64 non è cifratura: è solo codifica reversibile, si decodifica in un attimo"
+        - "È stata hashata con salt"
+      corretta: 1
+      spiegazione: "Base64 è un travestimento, non una serratura. Chiunque lo intercetti lo decodifica. E un MD5 senza salt è crackabile: il salt è ciò che spezza il crack offline."
+    - domanda: "Il token di reset password è valido, ma l'identità di chi resettare arriva da un campo «username» nel secondo POST. Qual è il problema?"
+      opzioni:
+        - "Il token andava messo nell'email"
+        - "L'utente da resettare deve derivare dal token, non da un campo modificabile dall'utente"
+        - "Il reset via email è sempre sicuro"
+      corretta: 1
+      spiegazione: "Ogni passo va legato all'identità vera lato server. Se chi resettare lo decide un campo che controlli tu, resetti la password di chiunque: il buono regalo è vero, ma lo intesti a voce."
+---
+
+<Intro
+  etichetta="Lezione sec4her · Modulo 2 · ragiona come una hunter 🔓"
+  sottotitolo="Due fili rossi: «se lo scrivi tu, non è una prova» e «il server deve legare ogni passo all'identità vera, non a un valore che controlli tu»."
+/>
+
+<Promessa>
+L'autenticazione è la porta d'ingresso: un errore qui, che altrove sarebbe fastidioso, qui è un disastro. Non impari a bucare account veri — impari a vedere *dove* un meccanismo di login ripone la sua fiducia, e perché spesso la ripone nel posto sbagliato.
+</Promessa>
+
+<MappaConcetti
+  concetti={["Le basi", "Attaccare il login", "Aggirare il brute-force", "Bypassare la 2FA", "Funzioni collegate", "Il metodo"]}
+/>
+
+## Il filo
+
+<Filo>Se lo scrivi tu, non è una prova. E ogni passo va legato all'identità vera, lato server.</Filo>
+
+<Passo numero={1} titolo="Le basi: cos'è l'autenticazione">
+
+**Autenticazione = verificare che tu sia davvero chi dici di essere.** È il primo mattone della sicurezza, perché un sito è esposto a chiunque sia connesso a internet. Si verifica con tre tipi di «prove» (i tre fattori):
+
+<Schema titolo="I tre fattori">
+- 🧠 **Qualcosa che SAI** — password, PIN (*knowledge factor*)
+- 📱 **Qualcosa che HAI** — telefono, token (*possession factor*)
+- 👁️ **Qualcosa che SEI** — impronta, voce (*inherence factor*)
+</Schema>
+
+Combinare 2 o più fattori = **autenticazione a più fattori (MFA)** → molto più sicura.
+
+### Autenticazione vs Autorizzazione (la coppia che si confonde)
+
+- **Autenticazione** = *CHI SEI?* (il login, il buttafuori all'ingresso)
+- **Autorizzazione** = *COSA PUOI FARE?* (i permessi, le porte interne)
+- Prima una, poi l'altra.
+
+### Come nascono le falle di autenticazione
+
+Quasi sempre in due modi:
+
+1. **Meccanismo debole** — non ferma il brute-force: l'attaccante prova mille password finché indovina.
+2. **Falla logica** — un errore di programmazione fa aggirare l'autenticazione del tutto (il famoso **«broken authentication»**).
+
+**Perché è così grave:** l'autenticazione è la porta d'ingresso. Un errore di logica qui, che altrove sarebbe un bug fastidioso, diventa un problema di sicurezza serio. E l'impatto sale coi privilegi: sfondi un account admin → controllo totale. Ma anche un account «insignificante» è utile: apre pagine interne che diventano **nuova superficie d'attacco**.
+
+> **Metafora:** l'autenticazione è il buttafuori. Lo batti in due modi: provando mille braccialetti finti finché uno funziona (brute-force), o trovando una crepa nel muro che ti fa entrare senza passare da lui (falla logica).
+
+</Passo>
+
+<Passo numero={2} titolo="Attaccare il login a password">
+
+### Il brute-force «intelligente»
+
+Brute-force = indovinare le credenziali per tentativi, automatizzati con **wordlist** e tool ad alta velocità. Ma l'attaccante **non tira a caso** — usa logica e informazioni pubbliche:
+
+- **Username prevedibili:** schemi (`nome.cognome@azienda.com`), nomi classici (`admin`, `administrator`), o username che trapelano da profili pubblici ed email nelle risposte HTTP.
+- **Password prevedibili:** anche con una password policy, gli umani incastrano una parola facile nella regola (`mypassword` → `Mypassword1!`). E al cambio obbligatorio fanno modifiche minime (`Mypassword1!` → `Mypassword2!`).
+
+### Username enumeration (il sito tradisce quali nomi esistono)
+
+Concetto sottile ma potentissimo: l'attaccante nota **piccole differenze nel comportamento** del sito per capire se un username è valido, costruendosi una lista corta di nomi reali *prima* di attaccare le password.
+
+<Schema titolo="Le tre spie dell'enumeration">
+1. **Status code** — uno diverso = username valido!
+2. **Messaggio d'errore** — «username errato» vs «password errata»; attenzione: a volte cambia anche di *un solo carattere* invisibile (es. un punto finale che manca)
+3. **Tempo di risposta** — un nome valido fa controllare anche la password → risposta più lenta (si amplifica mandando una password lunghissima)
+</Schema>
+
+**La difesa:** stesso codice, stesso messaggio, stesso tempo in tutti i casi.
+
+> **Metafora:** provi tante chiavi in un citofono. Per quasi tutti i nomi fa «bzzt, sconosciuto». Ma per un nome vero fa «bzzt... attenda...» — quella micro-esitazione ti dice *questa persona abita qui davvero*.
+
+</Passo>
+
+<Passo numero={3} titolo="Aggirare le protezioni brute-force (i difetti logici)">
+
+Qui si entra nel cuore del «broken authentication». Tanti lab, tutti con lo stesso DNA: *la protezione c'è, ma conta la cosa sbagliata.*
+
+### Difetto 1 — Il contatore che si azzera
+
+Il sito blocca dopo 3 tentativi falliti, **ma il contatore si azzera a ogni login riuscito**. Soluzione: intervalla i tentativi sulla vittima con un login valido sul **tuo** account → il contatore torna sempre a zero → non vieni mai bloccata.
+
+> **Regola operativa:** quando l'ordine delle richieste conta (reset → tentativo → reset), forza la concorrenza a **1 richiesta alla volta**, altrimenti il parallelismo rompe la sequenza.
+
+### Difetto 2 — Protezione basata sull'IP (X-Forwarded-For)
+
+Il sito blocca l'IP dopo troppi tentativi. Ma spesso capisce «da quale IP arrivi» leggendo l'header **`X-Forwarded-For`** — che però lo scrivi tu. Cambialo a ogni richiesta → ogni tentativo sembra da un IP nuovo → il contatore non scatta mai.
+
+<VisoreRichiesta
+  titolo="POST /login — l'IP che decidi tu"
+  richiesta={`POST /login HTTP/1.1
+Host: sito.com
+X-Forwarded-For: 10.0.0.99
+Content-Type: application/x-www-form-urlencoded
+
+username=carlos&password=prova`}
+  evidenzia={[
+    { testo: "X-Forwarded-For: 10.0.0.99", colore: "cremisi", spiegazione: "Il sito crede che questo sia l'IP da cui arrivi, ma lo scrivi tu. Cambialo a ogni richiesta e il blocco per IP non scatta mai. Se lo scrivi tu, non è una prova." },
+  ]}
+/>
+
+<FraseChiave>Se lo scrivi tu, non è una prova. (Vale per header, parametri, cookie — torna in TUTTI i lab.)</FraseChiave>
+
+> **Attenzione metodo:** non darlo per scontato. In alcuni lab `X-Forwarded-For` è un vicolo cieco — **testa l'ipotesi** con un valore, non insistere a caso.
+
+### Difetto 3 — Account locking aggirato con password spray
+
+L'account locking blocca *un* account dopo troppi tentativi. Ma protegge il singolo account, non «un account qualunque». Il bypass: invece di *tante password × 1 utente*, fai *poche password × tanti utenti* (**password spray**).
+
+> **Regola cruciale:** il numero di password provate su uno stesso account deve restare ≤ al limite di tentativi (limite 3 → max 3 password). La potenza viene dalla *larghezza* (tanti utenti), non dalla *profondità*.
+
+> Nota: anche il messaggio «account bloccato» è una spia — appare solo su account esistenti → aiuta la username enumeration.
+
+### Difetto 4 — Più password in una sola richiesta
+
+Se il rate limiting conta le **richieste HTTP** (non i tentativi di login), e il campo password accetta un **array JSON**, puoi infilare tutte le password in *una* richiesta:
+
+```json
+{"username":"carlos","password":["123456","password","...tutte..."]}
+```
+
+Il contatore vede 1 richiesta, ma dentro ci sono 100 tentativi. Il server cicla l'array e fa login appena una coppia è valida.
+
+> **Metafora:** il buttafuori ti concede 3 tentativi di infilare una chiave. Tu arrivi con un mazzo di 100 chiavi legate e le provi in un gesto solo. Lui conta i gesti (1), la serratura prova le chiavi (100).
+
+<Callout tipo="suggerimento" titolo="Il metodo investigativo (vale per tutti)">
+Riprodurre il blocco → capire *cosa viene contato* → testare le ipotesi (header IP? array?) → costruire l'attacco solo dopo. Mai sparare payload alla cieca.
+</Callout>
+
+### Nota: HTTP Basic Auth e Base64
+
+`Authorization: Basic base64(username:password)` — insicura: credenziali a ogni richiesta, spesso nessuna protezione brute-force.
+
+> **Base64 NON è cifratura** — è solo codifica reversibile. Chiunque intercetti `Basic dXNlcjpwYXNz` lo decodifica e legge `user:pass` in chiaro. È come scrivere la password in corsivo: sembra diversa ma si legge benissimo. *(Questo concetto torna nei cookie — tienilo a mente.)*
+
+</Passo>
+
+<Passo numero={4} titolo="Bypassare la 2FA (multi-factor)">
+
+### Simple bypass — il codice non serve nemmeno
+
+Il difetto: il server ti considera «loggata» **dopo la password, non dopo il codice**. Quindi:
+
+1. Login con le credenziali della vittima (le conosci) → il sito chiede il codice 2FA
+2. NON inserisci il codice: cambi l'URL a mano e vai dritta a `/my-account`
+3. La pagina si carica → la 2FA è saltata del tutto.
+
+> **Metafora:** una porta col cartello «prima suona il campanello», ma la porta è già aperta. Se spingi, entri. Il secondo fattore era un cartello 🪧, non una serratura 🔒.
+
+<Callout tipo="attenzione" titolo="La lezione più importante (dagli errori reali)">
+Nei lab di 2FA prova SEMPRE prima il bypass «banale» (salta lo step navigando all'URL). Solo se non funziona, passa a tecniche complesse. *Non innamorarti della prima ipotesi complicata* — si perde un sacco di tempo a inseguire session confusion e OTP quando la falla era semplice.
+</Callout>
+
+### Flawed 2FA logic — dirottare il 2° passo con un cookie
+
+Qui l'account su cui si completa la 2FA è deciso da un **cookie modificabile** (`verify=` o `account=`), non legato alla sessione del primo passo.
+
+<Flusso passi="1° passo col MIO account (supero la password, wiener), Ricevo il mio cookie verify=wiener, LO CAMBIO a mano in verify=carlos, Invio il codice col cookie della VITTIMA + la MIA session, Il sito completa la 2FA sull'account della vittima!" evidenzia="LO CAMBIO a mano in verify=carlos" />
+
+**Punto chiave:** non serve nemmeno la password della vittima — basta il suo username nel cookie. Il primo passo l'hai fatto tu col tuo account; il cookie dirotta solo il secondo passo. Se poi brute-forzi il codice (niente rate limit), entri in *qualunque* account conoscendo solo lo username.
+
+> **Errore operativo da ricordare:** nel brute-force di un codice a lunghezza fissa (PIN/OTP), controlla lo **zero-padding**. Un `0042` generato come `42` fa fallire silenziosamente un terzo dei tentativi.
+
+</Passo>
+
+<Passo numero={5} titolo="Le altre funzioni di autenticazione">
+
+I siti curano il login, ma **dimenticano le funzioni collegate** (ricordami, reset password): vanno protette allo stesso modo. E chi può crearsi un account ha accesso libero per *studiarle dall'interno*.
+
+### Il cookie «remember me» prevedibile
+
+<Flusso passi="1. Attivo 'ricordami' sul MIO account, 2. Studio il mio cookie (base64 di wiener:md5 password), 3. Scopro la formula, 4. Costruisco il cookie di CARLOS → entro senza password!" evidenzia="4. Costruisco il cookie di CARLOS → entro senza password!" />
+
+Il «remember me» salta l'intero login, quindi deve essere **impossibile da indovinare**. Il difetto: alcuni siti lo costruiscono con valori statici (`username:md5(password)`). Studiando il *proprio*, deduci la formula e la applichi agli altri.
+
+- **Base64 = travestimento, non serratura** (si decodifica in un attimo).
+- **MD5 senza salt = brute-forzabile:** si hashano le wordlist e si confronta. E se la password è comune, il suo hash è **già online** — basta incollarlo in un motore di ricerca.
+- Il **salt** (uno «scarabocchio segreto» diverso per ogni utente) è ciò che spezza questa catena: lo stesso hash non è più cercabile in liste precalcolate.
+- Il brute-force del *cookie* aggira i limiti del *login*, se non c'è rate-limit anche sui cookie.
+
+### Furto del cookie via XSS → crack offline
+
+Se non puoi crearti un account, **rubi** il cookie della vittima via XSS (`document.cookie` → exploit server), poi lo decodifichi e **cracki l'hash offline** (sul tuo PC, senza richieste al sito → nessun rate limit).
+
+- **HttpOnly** è il flag che avrebbe fermato il furto (JS non può leggere il cookie) — primo controllo da fare.
+- Dopo il Base64 ottieni un *hash*, non la password: serve il passo di crack in più (facile fermarsi credendo di aver finito).
+- **La trappola la pianti tu, la fa scattare la vittima:** lo script gira nel browser di chi apre la pagina, non nel tuo. *(Lo vedrai nel dettaglio in* [XSS](/lezioni/02-vulnerabilita-web/03-xss)*.)*
+
+### Password reset «broken logic»
+
+I metodi di reset, dal peggiore al migliore: inviare la password via email (pessimo — se può farlo, la conserva in chiaro), reset via URL con parametro prevedibile (`?user=victim` → debole), reset via token casuale ad alta entropia (sicuro se fatto bene).
+
+Il difetto del lab: il token è valido, ma **l'identità di chi resettare è decisa da un campo `username` modificabile** nel secondo passo.
+
+<Flusso passi="1. Chiedo il reset del MIO account, 2. Apro il mio link (token valido per me), 3. Intercetto il SUBMIT e lo modifico, 4. Tengo il mio token + cambio username in 'carlos' → resetto la password di chiunque!" evidenzia="4. Tengo il mio token + cambio username in 'carlos' → resetto la password di chiunque!" />
+
+> **L'indizio decisivo (dal ragionamento reale):** il link di reset **non conteneva lo username**, solo il token. Domanda che ne nasce: «se il link non ha lo username, dove finisce l'informazione su chi resettare?» → nel *corpo del secondo POST*, in un campo modificabile. Lì stava il difetto.
+
+> **Metafora:** un buono regalo autentico (il token) che però non ha scritto sopra il nome. Alla cassa dici tu a voce «intestalo a carlos». Il buono è vero, ma chi ne beneficia lo decidi tu. 🎫
+
+</Passo>
+
+<Passo numero={6} titolo="Il metodo investigativo (come pensare da attaccante)">
+
+Vale per *tutti* i lab di autenticazione:
+
+1. **Quanti passi ha il flusso?** (login → codice; invio link → apri link → invia password)
+2. **Come viene identificato l'utente in ogni passo?** (token? username? cookie? id?)
+3. **C'è un campo modificabile che decide chi sei / chi resettare?** (spesso nel passo finale)
+4. **Prova prima la falla semplice, poi la complessa.** Non innamorarti della prima ipotesi complicata.
+5. **Testa le ipotesi, non sparare a caso.** Riproduci il comportamento → capisci cosa viene contato/controllato → poi costruisci l'attacco.
+
+</Passo>
+
+## I due principi che tengono insieme tutto
+
+<LatoHacker importante>
+1. **«Se lo scrivi tu, non è una prova.»** Header (`X-Forwarded-For`), parametri (`username`, `id`), cookie (`verify=`, `remember-me`): tutto ciò che il client controlla, il client può falsificarlo. Il server non deve mai basare identità o permessi su questi valori.
+2. **Ogni passo va legato all'identità vera, lato server.** La 2FA va fatta rispettare su ogni pagina protetta (non basta mostrare la schermata del codice). L'utente da resettare deve derivare dal token, non da un campo nel corpo. Lo stato «loggato» va dato dopo *entrambi* i fattori, non dopo la password.
+</LatoHacker>
+
+E due regole tecniche che tornano spesso:
+
+- **Base64 ≠ cifratura.** **MD5 senza salt = crackabile.** Il **salt** spezza il crack offline.
+- **HttpOnly + Secure** sui cookie di sessione; **token casuali imprevedibili** per remember-me e reset.
+
+<Bottino
+  punti={[
+    "L'autenticazione si rompe in due modi: meccanismo debole (brute-force) o falla logica (broken authentication).",
+    "Se lo scrivi tu (header, parametro, cookie), non è una prova: il server non deve fidarsene mai.",
+    "Ogni passo va legato all'identità vera lato server: 2FA su ogni pagina, chi resettare dal token, loggata solo dopo ENTRAMBI i fattori."
+  ]}
+/>
+
+<Callout tipo="suggerimento" titolo="Allenati sul lab">
+Qui hai imparato il **metodo**. La pratica vera si fa sui lab gratuiti e legali della [Web Security Academy di PortSwigger — Authentication](https://portswigger.net/web-security/authentication): username enumeration, bypass della 2FA, reset logici, tutto quello che hai visto qui. *Lezione costruita da sette lab reali e dal ragionamento di chi li ha risolti — compresi gli errori e i dubbi.*
+</Callout>
+
+<Domande titolo="Domande da farti davanti a un login">
+- Quanti **passi** ha questo flusso, e come viene identificato l'utente in ognuno?
+- C'è un **campo modificabile** (username, cookie, header) che decide chi sono o chi resettare?
+- Il sito si comporta in modo **diverso** per username validi e non validi (codice, messaggio, tempo)?
+- La protezione brute-force conta la cosa giusta, o si può aggirare (IP spoofato, spray, array)?
+- Lo stato «loggato» arriva dopo la password o dopo *tutti* i fattori?
+</Domande>
+
+<ProssimaLezione
+  titolo="Cross-Site Scripting (XSS)"
+  anteprima="Dall'input che decide chi sei, all'input che il sito ripete nella pagina senza controllarlo. Impariamo a chiederci: dove finisce il mio input, e qual è il contesto che lo circonda?"
+/>
+
+<Chiusura>
+Il login sembra una fortezza, ma spesso si fida di un bigliettino che scrivi tu. Impara a chiederti sempre: *questa prova chi l'ha scritta?* **Non sei sola.** 🔓
+</Chiusura>

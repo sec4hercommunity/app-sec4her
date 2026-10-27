@@ -7,6 +7,7 @@ import { useLezioni } from '@/components/lezioni/LezioniProvider'
 import { IconaLucchetto } from '@/components/lezioni/Stato'
 import { PulsanteCompletata } from '@/components/lezioni/StatoLezioneClient'
 import {
+  basiDaCompletare,
   idLezione,
   lezioneSbloccata,
   risposteNecessarie,
@@ -54,18 +55,28 @@ export function LezioneProtetta({ children }: { children: ReactNode }) {
 
   const i = c.modulo.lezioni.findIndex((l) => l.slug === c.lezione.slug)
   const precedente = c.modulo.lezioni[i - 1]
+  const perLeBasi = c.lezione.avanzata && basiDaCompletare(c.modulo, completate)
   return (
     <section className="mx-auto my-10 max-w-xl rounded-2xl border border-dashed border-white/20 px-6 py-10 text-center">
       <IconaLucchetto className="mx-auto h-8 w-8 text-text/50" />
-      <h2 className="mt-4 font-mono text-xl font-bold text-text">Lezione bloccata</h2>
+      <h2 className="mt-4 font-mono text-xl font-bold text-text">
+        Lezione bloccata{c.lezione.avanzata && <span className="text-[#f0b35b]"> · Avanzato</span>}
+      </h2>
       <p className="mt-2 text-text/70">
-        Si sblocca quando {precedente?.prova?.tipo === 'quiz' ? 'superi il quiz' : 'completi la prova'} della lezione
-        precedente.
+        {perLeBasi
+          ? 'Completa prima le basi del modulo: questa è una lezione avanzata.'
+          : `Si sblocca quando ${precedente?.prova?.tipo === 'quiz' ? 'superi il quiz' : 'completi la prova'} della lezione precedente.`}
       </p>
-      {precedente && (
-        <Link href={`/lezioni/${c.modulo.slug}/${precedente.slug}`} className={`${PULSANTE_PRIMARIO} mt-6`}>
-          ← Vai a “{precedente.titolo}”
+      {perLeBasi ? (
+        <Link href={`/lezioni/${c.modulo.slug}`} className={`${PULSANTE_PRIMARIO} mt-6`}>
+          ← Torna al Modulo {c.modulo.numero}
         </Link>
+      ) : (
+        precedente && (
+          <Link href={`/lezioni/${c.modulo.slug}/${precedente.slug}`} className={`${PULSANTE_PRIMARIO} mt-6`}>
+            ← Vai a “{precedente.titolo}”
+          </Link>
+        )
       )}
     </section>
   )

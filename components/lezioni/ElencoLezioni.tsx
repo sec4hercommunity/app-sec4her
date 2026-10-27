@@ -3,20 +3,22 @@
 import Link from 'next/link'
 import { CARD } from '@/components/ctf/stili'
 import { durataTesto } from '@/lib/eventi'
-import { statoLezione, type Lezione, type Modulo, type StatoLezione } from '@/lib/lezioni'
+import { basiDaCompletare, statoLezione, type Lezione, type Modulo, type StatoLezione } from '@/lib/lezioni'
 import { useLezioni } from './LezioniProvider'
-import { BadgeStatoLezione, CerchioStato } from './Stato'
+import { BadgeAvanzato, BadgeStatoLezione, CerchioStato } from './Stato'
 
 function Riga({
   lezione,
   numero,
   stato,
   precedente,
+  motivoBlocco,
 }: {
   lezione: Lezione
   numero: number
   stato: StatoLezione
   precedente?: Lezione
+  motivoBlocco?: string
 }) {
   return (
     <>
@@ -32,16 +34,18 @@ function Riga({
         {lezione.descrizione && <p className="mt-1 text-sm text-text/70">{lezione.descrizione}</p>}
         {stato === 'bloccata' && (
           <p className="mt-1 font-mono text-xs text-text/50">
-            {precedente?.prova?.tipo === 'quiz'
-              ? `Si sblocca superando il quiz della lezione ${numero - 1}.`
-              : precedente?.prova?.tipo === 'flag'
-                ? `Si sblocca trovando la flag della lezione ${numero - 1}.`
-                : `Si sblocca completando la lezione ${numero - 1}.`}
+            {motivoBlocco ??
+              (precedente?.prova?.tipo === 'quiz'
+                ? `Si sblocca superando il quiz della lezione ${numero - 1}.`
+                : precedente?.prova?.tipo === 'flag'
+                  ? `Si sblocca trovando la flag della lezione ${numero - 1}.`
+                  : `Si sblocca completando la lezione ${numero - 1}.`)}
           </p>
         )}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-2">
         <BadgeStatoLezione stato={stato} />
+        {lezione.avanzata && <BadgeAvanzato />}
         <span className="font-mono text-xs text-text/60">
           {durataTesto(lezione.durataMinuti)}
           {lezione.xp > 0 && <span className="text-[#a98bff]"> · ⚡{lezione.xp} XP</span>}
@@ -60,6 +64,8 @@ export default function ElencoLezioni({ modulo }: { modulo: Modulo }) {
     <ol className="space-y-3">
       {modulo.lezioni.map((l, i) => {
         const stato = statoLezione(modulo, l, completate)
+        const motivoBlocco =
+          l.avanzata && basiDaCompletare(modulo, completate) ? 'Completa prima le basi del modulo.' : undefined
         return (
           <li
             key={l.slug}
@@ -71,7 +77,13 @@ export default function ElencoLezioni({ modulo }: { modulo: Modulo }) {
                 className="flex items-center gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-4 sm:p-5"
                 aria-disabled="true"
               >
-                <Riga lezione={l} numero={i + 1} stato={stato} precedente={modulo.lezioni[i - 1]} />
+                <Riga
+                  lezione={l}
+                  numero={i + 1}
+                  stato={stato}
+                  precedente={modulo.lezioni[i - 1]}
+                  motivoBlocco={motivoBlocco}
+                />
               </div>
             ) : (
               <Link

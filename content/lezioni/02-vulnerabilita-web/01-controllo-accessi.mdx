@@ -1,0 +1,342 @@
+---
+titolo: "Controllo degli accessi e privilege escalation"
+modulo: "02-vulnerabilita-web"
+slug: "01-controllo-accessi"
+ordine: 1
+livello: "Base"
+durata: "35 min"
+xp: 50
+sessioneLive: "sessione-02-owasp"
+prossima: "02-autenticazione"
+prova:
+  tipo: "quiz"
+  soglia: 70
+  domande:
+    - domanda: "Qual è la differenza tra autenticazione e controllo accessi (autorizzazione)?"
+      opzioni:
+        - "Sono la stessa cosa con due nomi diversi"
+        - "Autenticazione = chi sei; controllo accessi = cosa puoi fare"
+        - "Autenticazione = cosa puoi fare; controllo accessi = chi sei"
+      corretta: 1
+      spiegazione: "Prima l'autenticazione verifica chi sei, poi il controllo accessi decide cosa puoi vedere o fare. L'IDOR e le escalation vivono quasi sempre nel secondo, non nel primo."
+    - domanda: "Il link ad /admin non compare nel sito, ma scrivendo l'URL a mano la pagina si apre. Perché è un problema?"
+      opzioni:
+        - "Perché nascondere un link non è proteggerlo: il controllo dei permessi va fatto sul server"
+        - "Perché il link andava messo più in basso nella pagina"
+        - "Perché bastava toglierlo anche da robots.txt"
+      corretta: 0
+      spiegazione: "Nascondere non è proteggere (security by obscurity). Il controllo dei permessi va fatto sul server a ogni accesso alla funzione, non nascondendo il link nel front-end."
+    - domanda: "In un IDOR cambi id=wiener in id=carlos nell'URL e vedi i dati di Carlos. A cosa doveva fidarsi il server?"
+      opzioni:
+        - "Al numero scritto nell'URL, perché lo manda il browser"
+        - "Alla sessione (il cookie), non all'id che scrivi tu nell'URL"
+        - "A nessuno dei due: doveva usare un GUID casuale"
+      corretta: 1
+      spiegazione: "Il server deve fidarsi della sessione, non del valore che scrivi tu. Rendere l'id imprevedibile (GUID) non è un controllo accessi: va verificata la proprietà della risorsa."
+    - domanda: "Qual è la differenza tra escalation verticale e orizzontale?"
+      opzioni:
+        - "Verticale = stesso tipo di utente; orizzontale = ruoli diversi"
+        - "Verticale = sali di potere (utente → admin); orizzontale = resti al tuo livello ma accedi alle risorse di un altro utente"
+        - "Sono due nomi per lo stesso attacco"
+      corretta: 1
+      spiegazione: "Verticale = su/giù, poteri diversi (utente che diventa admin). Orizzontale = di fianco, stesso tipo di utente ma risorse altrui (il classico IDOR)."
+    - domanda: "Un'azione è protetta solo sul metodo POST, ma funziona anche in GET. Cosa insegna questo caso?"
+      opzioni:
+        - "Che bisogna bloccare solo la GET"
+        - "Che l'azione va protetta a prescindere dal metodo, negando per default i metodi non previsti"
+        - "Che il cookie di sessione non conta"
+      corretta: 1
+      spiegazione: "Proteggere un solo metodo lascia una porta di servizio aperta. Si protegge l'azione a prescindere dal metodo e si nega per default ciò che non è previsto."
+---
+
+<Intro
+  etichetta="Lezione sec4her · Modulo 2 · ragiona come una hunter 🔓"
+  sottotitolo="Due idee che reggono tutta la lezione: «nascondere non è proteggere» e «il server deve fidarsi della sessione, non di quello che scrivi tu»."
+/>
+
+<Promessa>
+Il controllo accessi è la vulnerabilità più comune del web, e nasce quasi sempre dallo stesso errore: l'app si fida di qualcosa che l'utente può cambiare. Qui non impari payload a memoria — impari a riconoscere *dove* un'app ripone la sua fiducia, e quando sbaglia.
+</Promessa>
+
+<MappaConcetti
+  concetti={["Le tre porte", "I tre tipi", "Escalation verticale", "URL e header", "Metodo e cookie", "IDOR orizzontale", "Multi-step"]}
+/>
+
+## Il filo
+
+<Filo>Nascondere non è proteggere. E il server deve fidarsi della sessione, non di quello che scrivi tu.</Filo>
+
+<Passo numero={1} titolo="Le tre porte: autenticazione, sessione, controllo accessi">
+
+Prima di tutto, la cosa che quasi tutti confondono. Sono **tre cose diverse**, in un ordine preciso. Pensa a una discoteca:
+
+<Flusso passi="🚪 Buttafuori · AUTENTICAZIONE · chi sei davvero?, 🎟️ Braccialetto · SESSIONE · ti riconosco dopo, 🔐 Porte interne · CONTROLLO ACCESSI · puoi entrare qui?" />
+
+- **Autenticazione** = conferma *chi sei* (il buttafuori ti chiede il documento)
+- **Gestione sessione** = il sistema *ti riconosce* nelle richieste successive (il braccialetto, così non ti ricontrollano ogni volta)
+- **Controllo accessi** = decide *cosa puoi fare* (le porte interne decidono in quali stanze entri)
+
+<FraseChiave>autenticazione = *chi sei* · sessione = *ti ricordo* · controllo accessi = *cosa puoi fare*</FraseChiave>
+
+<Callout tipo="nota" titolo="Note da non dimenticare">
+1. **L'errore più comune è confonderle.** Autenticazione ≠ sessione ≠ controllo accessi.
+2. **L'ordine conta.** Il controllo accessi funziona solo *dopo* che gli altri due hanno funzionato: poggia sopra di loro.
+3. **Broken access control** = quando la terza porta è rotta (fai entrare qualcuno dove non dovrebbe). È **comune** ed è una vulnerabilità **critica**.
+4. **Perché si sbaglia tanto?** Perché le decisioni le prendono le persone, mescolando regole tecniche + di business + legali. Dove decide un umano, aumenta il rischio di errore.
+</Callout>
+
+</Passo>
+
+<Passo numero={2} titolo="I tre tipi di controllo accessi">
+
+<Schema titolo="Verticale · Orizzontale · Contestuale">
+- **Verticale** — poteri diversi per ruolo (admin ⇅ utente)
+- **Orizzontale** — stesso tipo di utente, ognuno solo le *proprie* risorse (Mario ∥ Lucia)
+- **Contestuale** — conta l'ordine delle azioni (pagamento fatto → carrello bloccato)
+</Schema>
+
+**Verticale = i piani dell'edificio.** Pensa all'ascensore: chi ha il badge da *amministratore* sale a tutti i piani e fa tutto; l'*utente normale* resta al piano terra e certe funzioni non le vede proprio. Si ragiona per **livelli di potere**: tipi di utente diversi → funzioni diverse.
+
+**Orizzontale = gli appartamenti sullo stesso piano.** Tutti utenti dello stesso tipo, ma ognuno ha la chiave solo del *proprio* appartamento. Come in banca: vedi e paghi dal *tuo* conto, non da quello di un altro. Stessa risorsa, ma solo la fetta che è tua.
+
+**Contestuale = dipende dal momento.** Non è questione di *chi sei*, ma di *a che punto sei*. Come al supermercato online: prima di pagare puoi cambiare il carrello, dopo no. Impedisce di fare le azioni **nell'ordine sbagliato**.
+
+<Callout tipo="nota" titolo="Note da non dimenticare">
+1. **Verticale vs Orizzontale è la coppia da distinguere.** Verticale = *tipi diversi* di utente con *poteri diversi*. Orizzontale = *stesso tipo* di utente, ognuno solo le *proprie* risorse.
+2. **Trucco:** verticale = su/giù = gerarchia (capo vs dipendente). Orizzontale = di fianco = pari livello (io e te, ma cose separate).
+3. Il verticale mette in pratica due principi: **separazione dei compiti** (separation of duties) e **privilegio minimo** (least privilege = ognuno ha solo i permessi che gli servono).
+4. Il contestuale è l'unico che dipende dallo **stato/ordine**, non dall'identità.
+</Callout>
+
+</Passo>
+
+<Passo numero={3} titolo="Vertical privilege escalation: rompere il controllo verticale">
+
+> La funzione admin è come una **stanza importante al piano dei dirigenti, ma senza serratura**: non è protetta davvero, è solo non segnata sulla mappa dell'utente normale. Se trovi la porta, entri. E per trovarla ci sono tre strade.
+
+<Flusso passi="Utente normale senza permessi, Trova la porta /admin, Nessun controllo → entra" evidenzia="Nessun controllo → entra" />
+
+- **A mano:** sul sito il link ad `/admin` non compare, ma se scrivi direttamente `sito.com/admin` la pagina si apre comunque, perché nessuno controlla i permessi.
+- **robots.txt:** file pubblico pensato per i motori di ricerca; a volte elenca proprio gli indirizzi «nascosti» come `/admin` → l'attaccante li scopre senza fatica.
+- **Brute-force:** se l'URL non è scritto da nessuna parte, si prova con una *wordlist* finché non si trova.
+
+### Il punto centrale: «non protetto» ≠ «nascosto»
+
+L'errore di fondo è credere che *nascondere* un link basti a proteggerlo. **Nascondere non è proteggere.** Questo si chiama **security by obscurity** ed è una falsa sicurezza:
+
+- `robots.txt` è un'arma a doppio taglio: proprio nascondendo, *rivela* gli indirizzi sensibili.
+- Il **controllo lato interfaccia non conta**: decidere in JavaScript `if (isAdmin) mostra link` non protegge nulla. Lo script gira nel browser di *tutti* e l'URL «segreto» si legge aprendo il sorgente della pagina.
+- **La regola d'oro:** il controllo dei permessi va fatto **sul server**, ogni volta che si accede alla funzione — non nascondendo il link nel front-end.
+
+### Variante: parametro modificabile dall'utente
+
+Al login l'app scrive da qualche parte «sei admin? no» — es. `home.jsp?admin=false` o `?role=1`. Il problema: quel valore è in un posto che l'utente può **modificare a mano**.
+
+<Flusso passi="admin=false (utente normale), admin=true (accesso da admin)" evidenzia="admin=true (accesso da admin)" />
+
+I tre nascondigli tipici (tutti modificabili): **campo nascosto** in un form (`hidden`), **cookie**, **query string** (l'URL). Il difetto di fondo: *l'app decide i permessi guardando un valore fornito dall'utente — e tutto ciò che l'utente può toccare, l'utente può falsificarlo.* La verifica va **sempre** fatta lato server, consultando i dati veri (es. il ruolo nel database).
+
+</Passo>
+
+<Passo numero={4} titolo="Aggirare il controllo basato su URL">
+
+### Platform misconfiguration (header X-Original-URL)
+
+Regola tipo `DENY: POST, /admin/deleteUser, managers`. Sembra solida. Ma l'attaccante manda una richiesta furba: mette un percorso permesso nella riga e il percorso vietato in un **header**.
+
+<VisoreRichiesta
+  titolo="La richiesta furba dell'attaccante"
+  richiesta={`POST / HTTP/1.1
+Host: sito.com
+X-Original-URL: /admin/deleteUser
+Content-Type: application/x-www-form-urlencoded
+
+username=carlos`}
+  evidenzia={[
+    { testo: "POST /", colore: "ambra", spiegazione: "Nella riga c'è un percorso PERMESSO (/). La guardia la guarda e non blocca niente." },
+    { testo: "X-Original-URL: /admin/deleteUser", colore: "cremisi", spiegazione: "Il percorso vietato è qui, in un header non standard. Il back-end lo onora e riscrive l'URL su /admin/deleteUser." },
+  ]}
+/>
+
+Il punto è il **disaccordo tra due componenti**:
+
+<DueGuardie
+  input="POST /  ·  X-Original-URL: /admin/deleteUser"
+  sinistra={{ nome: "FRONT-END (la guardia)", regola: "guarda solo la riga della richiesta", vede: "/", esito: "vede '/' → fa passare", tono: "ambra" }}
+  destra={{ nome: "BACK-END (l'app)", regola: "onora l'header X-Original-URL e riscrive l'URL", vede: "/admin/deleteUser", esito: "esegue deleteUser", tono: "cremisi" }}
+  conclusione="la guardia e l'app leggono la stessa richiesta in modo diverso: l'header bypassa il controllo."
+/>
+
+Header da conoscere: **`X-Original-URL`** e **`X-Rewrite-URL`** (non standard, alcuni framework li accettano).
+
+<Callout tipo="attenzione" titolo="Lezioni dai lab (gli errori che ho fatto)">
+1. **Percorso vietato → nell'header, mai nella riga.** Nella riga ci va un path permesso (`/`); se scrivi `/admin` nella riga, la guardia ti blocca subito.
+2. **Il metodo conta.** Guardare una pagina = `GET`; eseguire un'azione = il metodo che quella funzione si aspetta. Un **404 spesso significa «URL giusto, metodo sbagliato»**, non «header ignorato».
+3. **Sintassi header precisa:** `Nome: valore` — zero spazi prima dei due punti. Con uno spazio (`X-Original-Url :`) il server ignora l'header del tutto.
+</Callout>
+
+<Callout tipo="suggerimento" titolo="Metodo di debug da riusare">
+Quando non sai *se* un header viene letto, testalo con un valore volutamente sbagliato (`X-Original-Url: /invalid`). Se ottieni *Not Found* invece della homepage → l'header **viene usato**, il problema è altrove (es. il metodo). Se ottieni la homepage → l'header **viene ignorato**, controlla la sintassi.
+</Callout>
+
+### URL «travestiti» (guardia rigida vs router flessibile)
+
+La guardia confronta l'URL in modo **rigido** (deve essere identico), il router che smista le richieste è più **flessibile**. Scrivi l'indirizzo «travestito»: la guardia non lo riconosce come protetto e passa, ma il router lo riconosce lo stesso ed esegue.
+
+I **3 travestimenti**:
+
+1. **Maiuscole/minuscole:** `/ADMIN/DELETEUSER` → se il controllo è *case-sensitive*, non lo riconosce come protetto.
+2. **Estensione finta (Spring):** `/admin/deleteUser.qualsiasi` → con `useSuffixPatternMatch` attiva viene mappato lo stesso. (Prima di Spring 5.3 era attiva di default → tanti siti vecchi vulnerabili.)
+3. **Slash finale:** su alcuni sistemi `/admin/deleteUser` e `/admin/deleteUser/` sono endpoint diversi.
+
+> **Metafora:** la guardia ha una lista esatta di nomi da bloccare («Mario Rossi»). Ma «MARIO ROSSI», «Mario Rossi.» e «Mario Rossi » (con spazio) sono la stessa persona scritta diversa, e il confronto esatto non la becca.
+
+</Passo>
+
+<Passo numero={5} titolo="Method-based access control (il lab del cookie)">
+
+L'app decide i permessi guardando **il metodo HTTP**, non solo l'URL. Il difetto: il controllo è messo su **un solo metodo** (la POST). Se la stessa azione funziona anche in **GET**, il controllo si aggira.
+
+> **Metafora:** metal detector solo all'ingresso principale (POST). C'è una porta di servizio (GET) senza controllo. Stessa stanza, due porte: se ne sorvegli una sola, si entra dall'altra.
+
+### Gli errori che ho fatto (il vero apprendimento)
+
+- **Identità sbagliata:** facevo l'upgrade mentre ero loggata **come admin**. Ma un admin che promuove un utente è il suo lavoro normale, *non è un exploit*.
+- **«Essere admin» non basta:** il lab non controlla se wiener *è* admin, ma se wiener **si è promosso da solo** sfruttando il buco.
+- **Il pezzo mancante — il cookie di sessione:** la richiesta partiva col cookie dell'admin. Finché la firma è dell'admin, agisco da admin. Serviva il cookie di **wiener**.
+
+### La richiesta vincente — i 3 cambi
+
+<VisoreRichiesta
+  titolo="GET /admin-roles — la richiesta vincente"
+  richiesta={`GET /admin-roles?username=wiener&action=upgrade HTTP/1.1
+Host: sito.com
+Cookie: session=(sessione di WIENER)`}
+  evidenzia={[
+    { testo: "GET", colore: "viola", spiegazione: "Cambio 1: metodo GET → aggira il blocco che c'era solo sulla POST." },
+    { testo: "username=wiener", colore: "ambra", spiegazione: "Cambio 2: username wiener → promuovo ME STESSA, non carlos." },
+    { testo: "session=(sessione di WIENER)", colore: "verde", spiegazione: "Cambio 3: cookie di wiener → l'azione parte dalla vittima, non dall'admin. Non conta chi cattura, conta chi firma." },
+  ]}
+/>
+
+| # | Cambio | Perché |
+|---|---|---|
+| 1 | Metodo → **GET** | aggira il blocco che c'era solo sulla POST |
+| 2 | username → **wiener** | promuovo ME STESSA, non carlos |
+| 3 | Cookie → **sessione di wiener** | l'azione parte dalla vittima, non dall'admin |
+
+<FraseChiave>Il cookie di sessione È la tua identità. Non conta chi eri quando catturi la richiesta, conta con quale cookie la invii → «non conta chi cattura, conta chi firma».</FraseChiave>
+
+### Regole d'oro
+
+- **«Essere admin» ≠ «aver risolto».** L'exploit vale solo se fatto con la sessione della vittima.
+- **La difesa:** proteggere l'**azione** a prescindere dal metodo, e **negare per default** i metodi non previsti (non basta bloccarne uno).
+
+### Approfondimento — perché esistono i cookie
+
+HTTP è **stateless** (senza memoria): ogni richiesta è indipendente, il server da solo non ricorda chi eri un attimo prima.
+
+<Flusso passi="1. Login (user + password), 2. Ricevi un cookie (session=abc123), 3. Ogni richiesta lo rimandi, 4. Ti riconosce: ah sei tu!" />
+
+Il **cookie di sessione** è il tuo lasciapassare temporaneo (= il braccialetto della discoteca). Per la sicurezza: *agli occhi del server, tu SEI il tuo cookie.* Chi lo ruba può **fingersi te** (session hijacking).
+
+</Passo>
+
+<Passo numero={6} titolo="Horizontal privilege escalation & IDOR">
+
+Fin qui si saliva **verso l'alto** (utente → admin). L'escalation **orizzontale** è diversa: *resti al tuo livello, ma accedi alle risorse di un altro utente come te.* Il modo più comune: cambiare un **id** nell'URL.
+
+<VisoreRichiesta
+  titolo="GET /myaccount — il numero che cambi tu"
+  richiesta={`GET /myaccount?id=124 HTTP/1.1
+Host: sito.com
+Cookie: session=IL_TUO_COOKIE`}
+  evidenzia={[
+    { testo: "id=124", colore: "ambra", spiegazione: "Il tuo account era id=123. Cambi il numero a mano: se l'app non controlla la proprietà, vedi i dati di un altro utente." },
+    { testo: "session=IL_TUO_COOKIE", colore: "verde", spiegazione: "La sessione dice chi sei davvero: il server dovrebbe fidarsi di QUESTA, non del numero nell'URL." },
+  ]}
+/>
+
+### Cos'è l'IDOR
+
+**IDOR** = *Insecure Direct Object Reference* («riferimento diretto a un oggetto, insicuro»). L'app usa un **valore controllato dall'utente** (es. `id` nell'URL) per prendere una risorsa **direttamente, senza controllare che sia tua**.
+
+- **Direct:** il riferimento punta *dritto* all'oggetto reale (`?id=123` prende il record 123). Cambi numero → cambi oggetto.
+- **Insecure:** manca il controllo. L'app si fida del riferimento invece di chiedersi «ma questo oggetto è di chi me lo chiede?».
+
+**I due tipi che incontrerai:** 1) riferimento a **oggetti del database** (`?id=carlos` → dati di Carlos); 2) riferimento a **file statici** (`?filename=report_123.pdf` → scarichi il file di un altro).
+
+> **Metafora del guardaroba:** il numero sul bigliettino è il *reference*. È «diretto» perché l'addetto va dritto al cappotto; è «insicuro» perché non controlla che il bigliettino sia tuo. Cambi numero → prendi il cappotto di un altro.
+
+### Il lab IDOR — dove sta esattamente il buco
+
+Loggata come **wiener**, intercetto `GET /my-account?id=wiener`, cambio in `id=carlos`, e il server risponde con username e **API key di Carlos**. Il server aveva **due modi** per sapere chi sei: il **cookie di sessione** (wiener, affidabile, non falsificabile) e il **parametro id** (lo scrivi tu). Il bug: *si è fidato dell'id dell'URL invece che della sessione.* Il controllo di **proprietà** (l'id richiesto appartiene a chi è loggato?) non c'era.
+
+Distinzione fondamentale:
+
+- **Autenticazione** = *chi sei*. Qui funzionava (eri wiener, sessione valida).
+- **Autorizzazione / controllo accessi** = *cosa puoi vedere/fare*. Qui era **rotta** (vedevi i dati di chiunque).
+
+<FraseChiave>Il server deve fidarsi della **sessione**, non del numero che scrivi tu nell'URL.</FraseChiave>
+
+### E se usano GUID casuali invece di numeri?
+
+Un **GUID** (`8a7f2c9d-4b1e-...`) non si indovina. Ma rendere l'id *imprevedibile* **non è un controllo accessi**: il GUID di un utente spesso **compare altrove** (messaggi, recensioni, profili, risposte API). L'attaccante lo trova lì, lo copia, e l'IDOR funziona come prima.
+
+> **Metafora aggiornata:** il codice segreto è stampato sul cartellino col nome che porti in vista. Non serve a niente se lo lasci scritto in giro. *Nascondere non è proteggere* — di nuovo.
+
+</Passo>
+
+<Passo numero={7} titolo="Processi a più passi (contestuale)">
+
+Molte funzioni si svolgono in **più passi**: carichi un form → invii → confermi. Il problema nasce quando il sito **protegge alcuni passi ma ne dimentica uno** — spesso l'ultimo, quello che *esegue davvero* l'azione.
+
+<Flusso passi="1. Carica form 🔒, 2. Invia modifiche 🔒, 3. Conferma → ESEGUE 🔓 NON protetto" evidenzia="3. Conferma → ESEGUE 🔓 NON protetto" />
+
+Il sito al passo 3 pensa: *«tanto ci arriva solo chi ha passato 1 e 2»*. Ma è una **supposizione, non un controllo**. L'attaccante invia direttamente la richiesta del passo 3 → l'azione parte senza permessi.
+
+> **Metafora:** tre porte in fila, il buttafuori controlla la 1 e la 2 ma non la 3 («tanto per arrivarci devi passare dalle prime due»). Ma c'è una porta laterale che dà dritto sulla 3.
+
+**La difesa:** il controllo accessi va applicato a **ogni singolo passo**, soprattutto a quello che esegue l'azione. *Ogni richiesta va verificata per conto suo, come se fosse la prima* (è di nuovo il principio di HTTP «senza memoria»).
+
+</Passo>
+
+## Il filo conduttore (vale per TUTTA la lezione)
+
+Qualunque tecnica di questa lezione torna sempre a due principi:
+
+<LatoHacker importante>
+1. **«Nascondere non è proteggere»** (security by obscurity). Un link nascosto, un URL strano, un GUID casuale → non sono difese. Sono solo ostacoli facili da aggirare.
+2. **Il server non deve MAI fidarsi del client.** Tutto ciò che l'utente può toccare (URL, parametri, cookie, header, campi hidden) può falsificarlo. L'unica difesa vera è **lato server**, basata sulla **sessione**, che verifica *identità* (chi sei) e *proprietà/permessi* (puoi farlo su questa risorsa?).
+</LatoHacker>
+
+> Autenticazione = *chi sei* · Autorizzazione = *cosa puoi fare*. L'IDOR e le escalation vivono quasi sempre nel secondo, non nel primo.
+
+<Bottino
+  punti={[
+    "Autenticazione = chi sei, sessione = ti ricordo, controllo accessi = cosa puoi fare. L'ordine conta.",
+    "Nascondere un link o usare un id imprevedibile non è proteggere: il controllo va fatto sul server.",
+    "Il server deve fidarsi della sessione (non falsificabile), non dei valori che scrivi tu in URL, header, cookie o campi hidden."
+  ]}
+/>
+
+<Callout tipo="suggerimento" titolo="Allenati sul lab">
+Qui hai imparato il **concetto**. La pratica vera si fa sui lab gratuiti e legali della [Web Security Academy di PortSwigger — Access control](https://portswigger.net/web-security/access-control): ci sono IDOR, escalation verticale e tutti i casi visti qui. *Lezione costruita da lab reali e dal ragionamento di chi li ha risolti, comprese le strade sbagliate prese prima di arrivarci.*
+</Callout>
+
+<Domande titolo="Domande da farti davanti a un target">
+- Quali valori nella richiesta posso cambiare io (URL, parametri, cookie, header, campi hidden)?
+- Il server **controlla** davvero chi sono, o si fida di un valore che gli mando?
+- Questo oggetto è *mio*? L'app verifica la **proprietà**, o solo che sia loggata?
+- Esiste una funzione admin raggiungibile «a mano», anche se il link non compare?
+- La stessa azione funziona con un **altro metodo** (GET al posto di POST)?
+</Domande>
+
+<ProssimaLezione
+  titolo="Vulnerabilità di autenticazione"
+  anteprima="Se il controllo accessi decide cosa puoi fare, l'autenticazione decide chi sei. Vediamo come si rompe la porta d'ingresso: brute-force intelligente, 2FA aggirata, reset fatti male."
+/>
+
+<Chiusura>
+Il controllo accessi sembra mille casi diversi, ma è sempre la stessa domanda: *di cosa si fida il server, e quella cosa la posso toccare io?* **Non sei sola.** 🔓
+</Chiusura>

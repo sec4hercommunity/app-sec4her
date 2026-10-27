@@ -15,10 +15,12 @@ import {
   StatusCodes,
   ViaggioCompleto,
 } from '@/components/lezione/Interattivi'
+import DueGuardie from '@/components/lezione/DueGuardie'
 import MappaConcetti from '@/components/lezione/MappaConcetti'
 import NonTiServeOra from '@/components/lezione/NonTiServeOra'
 import ProssimaLezione from '@/components/lezione/ProssimaLezione'
 import SimulatoreProxy from '@/components/lezione/SimulatoreProxy'
+import SourceSink from '@/components/lezione/SourceSink'
 import {
   Bottino,
   Chiusura,
@@ -26,11 +28,13 @@ import {
   Definizione,
   Domande,
   Filo,
+  FraseChiave,
   Intro,
   LatoHacker,
   Passo,
   Promessa,
 } from '@/components/lezione/Testo'
+import VisoreRichiesta from '@/components/lezione/VisoreRichiesta'
 import { LINK_ESTERNO } from '@/config/links'
 
 // Componenti e stili usati da TUTTI i file MDX (le lezioni in content/lezioni/).
@@ -116,6 +120,7 @@ const components: MDXComponents = {
   Intro,
   Promessa,
   Filo,
+  FraseChiave,
   Passo,
   Definizione,
   LatoHacker,
@@ -136,6 +141,10 @@ const components: MDXComponents = {
   CartolinaVsBusta,
   ViaggioCompleto,
   SimulatoreProxy,
+  // components/lezione/: vulnerabilità web (modulo 2)
+  VisoreRichiesta,
+  DueGuardie,
+  SourceSink,
 }
 
 export function useMDXComponents(): MDXComponents {
