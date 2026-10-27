@@ -17,9 +17,9 @@ type Props = {
 // Anteprima della lezione successiva. Finché la prova di questa lezione non è superata, mostra il lucchetto.
 // <ProssimaLezione titolo="Intercettiamo un login" anteprima="..." />
 export default function ProssimaLezione({ titolo, anteprima, modulo, slug }: Props) {
-  const { moduli, completate } = useLezioni()
+  const { moduli, completate, anteprima: modalitaAnteprima } = useLezioni()
   const m = moduli.find((x) => x.slug === modulo)
-  const sbloccata = m && slug ? lezioneSbloccata(m, slug, completate) : false
+  const sbloccata = m && slug ? lezioneSbloccata(m, slug, completate, modalitaAnteprima) : false
 
   const contenuto = (
     <>

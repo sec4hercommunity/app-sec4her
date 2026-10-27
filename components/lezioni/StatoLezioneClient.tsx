@@ -9,11 +9,11 @@ type Props = { modulo: string; lezione: string }
 
 // Badge con lo stato attuale della lezione (cambia quando la segni come completata).
 export function BadgeLezioneAttuale({ modulo, lezione }: Props) {
-  const { moduli, completate } = useLezioni()
+  const { moduli, completate, anteprima } = useLezioni()
   const m = moduli.find((x) => x.slug === modulo)
   const l = m?.lezioni.find((x) => x.slug === lezione)
   if (!m || !l) return null
-  return <BadgeStatoLezione stato={statoLezione(m, l, completate)} />
+  return <BadgeStatoLezione stato={statoLezione(m, l, completate, anteprima)} />
 }
 
 // "Segna come completata": aggiorna lo stato nel percorso (mappa, modulo e barra di avanzamento).

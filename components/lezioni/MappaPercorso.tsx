@@ -15,12 +15,13 @@ const LINEA: Record<StatoModulo, string> = {
 
 // Mappa dei 7 moduli collegati da una linea: orizzontale su schermo largo, verticale su telefono.
 export default function MappaPercorso() {
-  const { moduli, completate } = useLezioni()
+  const { moduli, completate, anteprima } = useLezioni()
 
   return (
     <ol className="grid gap-4 lg:grid-cols-7 lg:gap-3">
       {moduli.map((m, i) => {
-        const stato = statoModulo(m, completate)
+        const stato = statoModulo(m, completate, anteprima)
+        const apribile = m.aperto || anteprima
         const fatte = lezioniCompletate(m, completate)
         const numero = String(m.numero).padStart(2, '0')
         const contenuto = (
@@ -56,7 +57,7 @@ export default function MappaPercorso() {
               />
             )}
             <CerchioStato stato={stato} etichetta={numero} />
-            {m.aperto ? (
+            {apribile ? (
               <Link
                 href={`/lezioni/${m.slug}`}
                 className={`${CARD} block min-w-0 flex-1 p-4 focus:outline-none lg:p-3 focus-visible:ring-2 focus-visible:ring-brand lg:w-full ${

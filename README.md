@@ -665,6 +665,26 @@ successiva arrivano dal **frontmatter** del file (`lib/catalogo.ts` li legge dur
 > quindi chi apre il codice della pagina le vede. **In produzione la verifica (e gli XP) andranno fatti lato
 > server** (Supabase), come scritto anche nei file.
 
+### Modalità anteprima (solo sviluppo) 👁️
+
+Per vedere **qualsiasi lezione in anteprima durante lo sviluppo**, senza completare le precedenti e **senza togliere
+davvero i lucchetti alle utenti**, c'è una modalità anteprima. Quando è attiva, tutti i moduli e tutte le lezioni sono
+apribili, i lucchetti vengono ignorati e in cima alla pagina compare l'avviso *"⚠️ Modalità anteprima attiva (solo
+sviluppo)"*. È definita in **`config/anteprima.ts`** e **funziona solo in sviluppo** (`npm run dev`): in produzione
+(`next build` / `next start`) resta **sempre spenta**, qualunque valore abbia il flag. Con l'anteprima spenta i
+lucchetti funzionano esattamente come prima (la logica in `lib/lezioni.ts` non cambia: le funzioni hanno solo un
+parametro `anteprima` in più, con valore di default `false`).
+
+Due modi per attivarla:
+
+| Come | Cosa fare | Dove vale |
+| --- | --- | --- |
+| **Parametro URL** (consigliato) | Aggiungi `?anteprima=1` all'indirizzo, es. `/lezioni/02-vulnerabilita-web/02-autenticazione?anteprima=1` | Solo in quella scheda, senza toccare il codice |
+| **Flag in config** | In `config/anteprima.ts` metti `ANTEPRIMA_LEZIONI = true` | Tutte le pagine, finché non lo rimetti a `false` |
+
+**Per disattivarla:** togli `?anteprima=1` dall'URL (o rimetti `ANTEPRIMA_LEZIONI = false`). ⚠️ Ricordati di non
+lasciare il flag a `true` quando apri una PR: è una comodità di sviluppo, non deve finire attiva per le utenti.
+
 ### La pagina della lezione
 
 In alto: modulo e numero, durata, livello, XP e stato. Poi il **testo MDX** (con i componenti qui sotto), la
@@ -801,6 +821,7 @@ la lingua `http`, che mostra una richiesta o una risposta in stile terminale.
 | `lib/catalogo.ts` | Legge sul server i file MDX di ogni modulo e crea l'elenco delle lezioni |
 | `lib/lezioni.ts` | Tipi e regole: lettura del frontmatter, stati, lucchetti, XP, soglia del quiz |
 | `data/lezioni-mock.ts` | ⚠️ **Dati finti**: `MODULI_BASE` (i 7 moduli), progressi iniziali, sessioni live |
+| `config/anteprima.ts` | 👁️ **Modalità anteprima** (solo sviluppo): flag `ANTEPRIMA_LEZIONI` e `?anteprima=1` per ignorare i lucchetti |
 | `app/(riservata)/lezioni/` | Percorso, pagina del modulo, pagina della lezione |
 | `components/lezioni/` | Mappa, barra, elenco lezioni, stati, sessione live, stato condiviso (`LezioniProvider`) |
 | `components/lezione/` | Componenti MDX (testo e interattivi) e `Prova.tsx` (quiz, flag, lucchetto della lezione) |

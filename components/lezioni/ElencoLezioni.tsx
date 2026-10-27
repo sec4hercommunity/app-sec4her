@@ -58,12 +58,12 @@ function Riga({
 // Elenco delle lezioni di un modulo, con stato (completata / prossima / da fare / bloccata), durata e XP.
 // Le lezioni bloccate non sono cliccabili: si sbloccano completando (o superando la prova de) la precedente.
 export default function ElencoLezioni({ modulo }: { modulo: Modulo }) {
-  const { completate } = useLezioni()
+  const { completate, anteprima } = useLezioni()
 
   return (
     <ol className="space-y-3">
       {modulo.lezioni.map((l, i) => {
-        const stato = statoLezione(modulo, l, completate)
+        const stato = statoLezione(modulo, l, completate, anteprima)
         const motivoBlocco =
           l.avanzata && basiDaCompletare(modulo, completate) ? 'Completa prima le basi del modulo.' : undefined
         return (

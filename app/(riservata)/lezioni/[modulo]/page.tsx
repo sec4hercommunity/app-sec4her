@@ -1,9 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { LINK } from '@/components/ctf/stili'
-import ElencoLezioni from '@/components/lezioni/ElencoLezioni'
-import RiquadroSessione from '@/components/lezioni/RiquadroSessione'
-import { IconaLucchetto } from '@/components/lezioni/Stato'
+import ContenutoModulo from '@/components/lezioni/ContenutoModulo'
 import { caricaCatalogo } from '@/lib/catalogo'
 
 // Una pagina per ogni modulo del catalogo (data/lezioni-mock.ts + lezioni MDX); gli altri indirizzi non esistono.
@@ -39,26 +37,7 @@ export default async function PaginaModulo({ params }: { params: Promise<{ modul
         </p>
       </header>
 
-      {modulo.aperto ? (
-        <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_22rem] lg:items-start">
-          <section aria-labelledby="titolo-lezioni">
-            <h2 id="titolo-lezioni" className="font-mono text-2xl font-bold text-text">
-              <span className="text-hack">&gt;</span> Lezioni
-            </h2>
-            <div className="mt-6">
-              <ElencoLezioni modulo={modulo} />
-            </div>
-          </section>
-          <aside className="lg:sticky lg:top-6">
-            <RiquadroSessione modulo={modulo.slug} />
-          </aside>
-        </div>
-      ) : (
-        <p className="mt-10 flex items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 px-6 py-12 text-center font-mono text-sm text-text/60">
-          <IconaLucchetto className="h-4 w-4 shrink-0" />
-          Prossimamente: questo modulo si apre più avanti nel percorso.
-        </p>
-      )}
+      <ContenutoModulo modulo={modulo} />
     </>
   )
 }

@@ -51,8 +51,10 @@ export function lezioniCompletate(modulo: Modulo, completate: ReadonlySet<string
   return modulo.lezioni.filter((l) => completate.has(idLezione(modulo.slug, l.slug))).length
 }
 
-export function statoModulo(modulo: Modulo, completate: ReadonlySet<string>): StatoModulo {
-  if (!modulo.aperto) return 'prossimamente'
+// "anteprima" (solo sviluppo, vedi config/anteprima.ts): con true un modulo chiuso risulta comunque apribile.
+// Con il valore di default (false) la logica è identica a prima.
+export function statoModulo(modulo: Modulo, completate: ReadonlySet<string>, anteprima = false): StatoModulo {
+  if (!modulo.aperto) return anteprima ? 'in-corso' : 'prossimamente'
   if (modulo.lezioni.length > 0 && lezioniCompletate(modulo, completate) === modulo.lezioni.length) return 'completato'
   return 'in-corso'
 }
@@ -66,19 +68,33 @@ export function basiDaCompletare(modulo: Modulo, completate: ReadonlySet<string>
 // Lucchetti: la prima lezione di un modulo aperto è sempre libera; le altre si sbloccano
 // quando la lezione precedente è completata (per le lezioni con prova: quando la prova è superata).
 // Le lezioni avanzate hanno un vincolo in più: restano bloccate finché non sono fatte tutte le basi del modulo.
-export function lezioneSbloccata(modulo: Modulo, slug: string, completate: ReadonlySet<string>): boolean {
-  if (!modulo.aperto) return false
+// "anteprima" (solo sviluppo, vedi config/anteprima.ts): con true ogni lezione esistente è sbloccata.
+// Con il valore di default (false) la logica è identica a prima.
+export function lezioneSbloccata(
+  modulo: Modulo,
+  slug: string,
+  completate: ReadonlySet<string>,
+  anteprima = false,
+): boolean {
   const i = modulo.lezioni.findIndex((l) => l.slug === slug)
   if (i < 0) return false
+  if (anteprima) return true
+  if (!modulo.aperto) return false
   if (modulo.lezioni[i].avanzata && basiDaCompletare(modulo, completate)) return false
   if (i === 0) return true
   return completate.has(idLezione(modulo.slug, modulo.lezioni[i - 1].slug))
 }
 
 // La "prossima" è la prima lezione sbloccata e non ancora completata del modulo.
-export function statoLezione(modulo: Modulo, lezione: Lezione, completate: ReadonlySet<string>): StatoLezione {
+// "anteprima" (solo sviluppo): con true nessuna lezione risulta "bloccata". Default false = logica identica a prima.
+export function statoLezione(
+  modulo: Modulo,
+  lezione: Lezione,
+  completate: ReadonlySet<string>,
+  anteprima = false,
+): StatoLezione {
   if (completate.has(idLezione(modulo.slug, lezione.slug))) return 'completata'
-  if (!lezioneSbloccata(modulo, lezione.slug, completate)) return 'bloccata'
+  if (!lezioneSbloccata(modulo, lezione.slug, completate, anteprima)) return 'bloccata'
   const prima = modulo.lezioni.find((l) => !completate.has(idLezione(modulo.slug, l.slug)))
   return prima?.slug === lezione.slug ? 'prossima' : 'da-fare'
 }

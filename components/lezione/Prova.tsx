@@ -50,8 +50,8 @@ export function useLezioneCorrente(): (Corrente & { superata: boolean }) | null 
 // Se la lezione è ancora bloccata (prova della precedente non superata) mostra il lucchetto al posto del contenuto.
 export function LezioneProtetta({ children }: { children: ReactNode }) {
   const c = useLezioneCorrente()
-  const { completate } = useLezioni()
-  if (!c || lezioneSbloccata(c.modulo, c.lezione.slug, completate)) return <>{children}</>
+  const { completate, anteprima } = useLezioni()
+  if (!c || lezioneSbloccata(c.modulo, c.lezione.slug, completate, anteprima)) return <>{children}</>
 
   const i = c.modulo.lezioni.findIndex((l) => l.slug === c.lezione.slug)
   const precedente = c.modulo.lezioni[i - 1]
