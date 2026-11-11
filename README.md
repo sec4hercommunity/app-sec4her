@@ -17,10 +17,29 @@ Questo repository contiene la **web app** di Sec4Her. Oggi l'app ha:
   (con **dati finti** per ora);
 - la pagina **Eventi** (`/eventi`) con iscrizione agli eventi e la pagina **Meeting** (`/meeting`) per prenotare
   una call con noi su Cal.com (con **dati finti** per ora);
-- una **pagina segnaposto** per le altre voci del menu.
+- la sezione **Lezioni** (`/lezioni`): il percorso in 7 moduli, con **8 lezioni vere in MDX** (modulo 1 "Basi di
+  rete e web" e modulo 2 "Vulnerabilità web"), quiz, flag, simulatore proxy, lucchetti e XP;
+- una **pagina segnaposto** per le altre voci del menu (About us, Bug Bounty Group, Contact us).
 
 > ⚠️ Il login funziona solo con delle **credenziali di test** e la registrazione **non salva dati**: il
 > collegamento a un database per gestire davvero gli account verrà fatto più avanti.
+
+### A che punto siamo
+
+Il piano del progetto (`docs/architettura.md`) ha 5 fasi. Siamo in **Fase 1 – Fondamenta sito**:
+
+| Fase | Obiettivo | Stato |
+| --- | --- | --- |
+| 0 | Community viva su Discord | Fuori dal sito |
+| **1** ⬅ | Landing + brand + 2-3 note pubbliche (MDX) online su Vercel | 🟡 In corso: brand, menu e lezioni MDX fatti; mancano landing pubblica, note senza login e Vercel |
+| 2 | Account: Supabase Auth + note riservate | ❌ Da fare (oggi c'è solo il login di test) |
+| 3 | Membership: Stripe + ruolo Discord | ❌ Da fare |
+| 4 | Rifinitura e pentest | 🟡 Eventi, Meeting e CTF Groups esistono già come sola grafica |
+
+Tutto il sito oggi è **solo grafica con dati finti**: non c'è un backend, e iscrizioni, gruppi, XP e lezioni
+completate spariscono ricaricando la pagina. La fotografia completa (funzionalità, problemi, rischi, cosa manca per
+il backend) è in **[`docs/STATO-PROGETTO.md`](docs/STATO-PROGETTO.md)**; il piano del backend in
+[`docs/PIANO-BACKEND.md`](docs/PIANO-BACKEND.md).
 
 ---
 
@@ -29,7 +48,8 @@ Questo repository contiene la **web app** di Sec4Her. Oggi l'app ha:
 1. [Tecnologie usate](#1-tecnologie-usate)
 2. [Requisiti](#2-requisiti)
 3. [Come avviare il progetto in locale](#3-come-avviare-il-progetto-in-locale)
-4. [Struttura delle cartelle](#4-struttura-delle-cartelle)
+4. [Struttura delle cartelle](#4-struttura-delle-cartelle) · [Tutte le pagine](#tutte-le-pagine) ·
+   [Componenti riutilizzabili principali](#componenti-riutilizzabili-principali)
 5. [Pagine di Accesso e Registrazione](#5-pagine-di-accesso-e-registrazione)
 6. [Login di test, pagine protette ed Esci](#6-login-di-test-pagine-protette-ed-esci)
 7. [La pagina Home](#7-la-pagina-home)
@@ -119,8 +139,8 @@ npm run dev
 
 👉 **http://localhost:3000**
 
-Verrai portata automaticamente alla pagina **Accedi**. Entra con le credenziali di test (vedi
-[sezione 6](#6-login-di-test-pagine-protette-ed-esci)). Ogni volta che salvi un file, la pagina si aggiorna da sola.
+Verrai portata automaticamente alla pagina **Accedi**. Entra con le credenziali di test
+**`test@sec4her.com`** / **`Test1234!`** (solo sviluppo, vedi [sezione 6](#6-login-di-test-pagine-protette-ed-esci)). Ogni volta che salvi un file, la pagina si aggiorna da sola.
 
 **6. Per fermare l'app** torna nel terminale e premi **`Ctrl + C`**.
 
@@ -187,7 +207,9 @@ app-sec4her/
 │   ├── ctf/                    Pezzi della sezione CTF Groups (card, modali, badge, avatar…)
 │   ├── eventi/                 Pezzi della pagina Eventi (card, modale iscrizione, badge, icone…)
 │   ├── meeting/                Pezzi della pagina Meeting (card del team e della call)
-│   └── lezioni/                Pezzi delle Lezioni (mappa, sessione live, stati) e mdx/ (Callout, Schema, RichiestaHttp)
+│   ├── lezioni/                Pezzi delle Lezioni (mappa, elenco, stati, sessione live, avviso anteprima, LezioniProvider)
+│   │   └── mdx/                Primi componenti MDX: Callout, Schema/Flusso, RichiestaHttp
+│   └── lezione/                Componenti usati DENTRO i file MDX (testo, interattivi, prova, simulatore proxy…)
 ├── content/
 │   └── lezioni/                ✍️ Testo delle lezioni in MDX, una cartella per modulo (sezione 10)
 ├── auth/
@@ -197,7 +219,8 @@ app-sec4her/
 │   ├── credenzialiTest.ts      ⚠️ Email, password e nome/cognome dell'utente di TEST (solo sviluppo)
 │   ├── links.ts                ⚠️ TUTTI i link esterni (Discord, Cal.com, call): segnaposto da sostituire
 │   ├── sito.ts                 Voci del menu e contatti del footer (facili da modificare)
-│   └── ctf.ts                  Limiti dei CTF Groups (max gruppi, max membri) e opzioni dei moduli
+│   ├── ctf.ts                  Limiti dei CTF Groups (max gruppi, max membri) e opzioni dei moduli
+│   └── anteprima.ts            👁️ Modalità anteprima delle lezioni (solo sviluppo, ignora i lucchetti)
 ├── data/
 │   ├── ctf-mock.ts             ⚠️ Dati FINTI dei CTF e dei gruppi (da sostituire con Supabase)
 │   ├── eventi-mock.ts          ⚠️ Dati FINTI degli eventi (da sostituire con Supabase)
@@ -208,7 +231,8 @@ app-sec4her/
 │   ├── ctf.ts                  Tipi e regole dei CTF: stato, conto alla rovescia, controlli dei moduli
 │   ├── eventi.ts               Tipi e regole degli eventi: temi, piattaforme, posti, conto alla rovescia, controlli
 │   ├── meeting.ts              Tipi della pagina Meeting (persona del team, tipo di call)
-│   ├── lezioni.ts              Tipi e regole delle Lezioni: stato di moduli e lezioni, proprietà dei file MDX
+│   ├── lezioni.ts              Tipi e regole delle Lezioni: stato di moduli e lezioni, lucchetti, XP, frontmatter
+│   ├── catalogo.ts             Legge sul server i file MDX delle lezioni e crea l'elenco completo dei moduli
 │   └── ics.ts                  Crea il file .ics "Aggiungi al calendario" direttamente nel browser
 ├── mdx-components.tsx          Stile del Markdown e componenti usabili nelle lezioni MDX
 ├── next.config.ts              Configurazione di Next.js (attiva MDX)
@@ -220,12 +244,63 @@ app-sec4her/
 ├── .gitignore                  File che Git deve ignorare (node_modules, .next, .env.local, prompt.txt, tmpapp/)
 ├── CLAUDE.md                   Istruzioni per Claude Code: progetto, colori, comandi, regole
 ├── AGENTS.md                   Note per gli assistenti AI, generate da Next.js (si ricrea con `npm run dev`)
-└── docs/
-    ├── architettura.md                 Architettura della piattaforma (versione Markdown del PDF)
-    ├── struttura-corsi.md              Struttura del percorso formativo (versione Markdown del PDF)
-    ├── sec4her-architettura-sito.pdf   Documento originale sull'architettura del sito
-    └── sec4her-struttura-corsi.pdf     Documento originale sul percorso formativo
+├── docs/
+│   ├── STATO-PROGETTO.md               📊 Stato del progetto: funzionalità, dati finti, problemi, rischi, prossimi passi
+│   ├── PIANO-BACKEND.md                Piano del backend: tabelle, regole RLS, fasi di sviluppo
+│   ├── TEST-CHECKLIST.md               Checklist dei test manuali
+│   ├── architettura.md                 Architettura della piattaforma (versione Markdown del PDF)
+│   ├── struttura-corsi.md              Struttura del percorso formativo (versione Markdown del PDF)
+│   ├── sec4her-architettura-sito.pdf   Documento originale sull'architettura del sito
+│   └── sec4her-struttura-corsi.pdf     Documento originale sul percorso formativo
+└── Appunti …/, Introduzione_CTF/, Presentazione Lucrezia/   PDF di appunti e presentazioni (materiale di partenza)
 ```
+
+### Tutte le pagine
+
+**Pubblica** = si apre senza login. **Riservata** = solo dopo il login (oggi il controllo è solo nel browser).
+
+| Indirizzo | A cosa serve | Accesso |
+| --- | --- | --- |
+| `/` | Nessun contenuto: porta subito ad `/accedi` | Pubblica |
+| `/accedi` | Login (oggi con le credenziali di test); con `?da=/pagina` dopo il login torna lì | Pubblica |
+| `/registrati` | Modulo di registrazione con controlli dei campi (**non salva nulla**) | Pubblica |
+| indirizzo inesistente | Porta ad `/accedi` | Pubblica |
+| `/home` | Logo grande e presentazione dell'Academy | Riservata |
+| `/lezioni` | Il percorso: mappa dei 7 moduli, avanzamento, XP, prossima sessione live | Riservata |
+| `/lezioni/[modulo]` | Un modulo (es. `/lezioni/01-basi-rete-web`): descrizione, lezioni con lucchetti, sessione live | Riservata |
+| `/lezioni/[modulo]/[lezione]` | Una lezione: testo MDX, componenti interattivi, prova finale (quiz o flag), sessione live | Riservata |
+| `/eventi` | Evento del mese, prossimi eventi con filtri, eventi passati, iscrizione | Riservata |
+| `/meeting` | Founder e Co-founder, prenotazione della Call 1:1 su Cal.com | Riservata |
+| `/ctf` | Lista dei CTF con filtri e "Aggiungi CTF" | Riservata |
+| `/ctf/[id]` | Dettaglio di un CTF (es. `/ctf/ctf-hunter`): gruppi, "Unisciti", "Crea gruppo" | Riservata |
+| `/about`, `/bug-bounty`, `/contatti` | Segnaposto "[in costruzione]" | Riservata |
+
+Le 8 lezioni di oggi: `01-basi-rete-web/` → `01-networking-le-basi`, `02-intercettiamo-un-login`;
+`02-vulnerabilita-web/` → `01-controllo-accessi`, `02-autenticazione`, `03-xss`, `04-injection-ssrf-secrets`,
+`05-parser-differential-ssti`, `06-jwt-kid-traversal-lfi`. I moduli 3-7 esistono ma sono "🔒 prossimamente".
+
+### Componenti riutilizzabili principali
+
+| Componente | Dove | A cosa serve |
+| --- | --- | --- |
+| `AuthLayout` | `components/` | Cornice di Accedi/Registrati: logo, slogan, card centrata |
+| `Campo` | `components/` | Campo di testo con etichetta e messaggio di errore |
+| `Pulsante` | `components/` | Pulsante viola principale |
+| `Logo` | `components/` | Mostra un logo SVG, con la scritta "sec4her" se l'immagine manca |
+| `Header` / `Footer` | `components/` | Barra in alto con menu ☰ ed Esci / barra in basso con contatti e slogan |
+| `Segnaposto` | `components/` | Contenuto provvisorio "[in costruzione]" delle pagine del menu |
+| `RiquadroDiscord`, `IconaDiscord` | `components/` | Riquadro "Unisciti alla community" e logo Discord |
+| `stili.ts` (`CARD`, `PULSANTE_PRIMARIO`, `PULSANTE_SECONDARIO`, `LINK`, `ETICHETTA`) | `components/ctf/` | Classi Tailwind condivise da CTF, Eventi, Meeting e Lezioni |
+| `useOra` | `components/ctf/` | Ora corrente aggiornata (per conti alla rovescia e stati) |
+| `Modale`, `CampiModulo`, `BadgeStato`, `CardCtf`, `CardGruppo` | `components/ctf/` | Finestre modali, campi dei moduli, card e badge dei CTF |
+| `useEventi`, `CardEvento`, `ModaleIscrizione`, `AzioniIscrizione` | `components/eventi/` | Stato delle iscrizioni (usato anche dalle sessioni live), card e iscrizione |
+| `CardTeam`, `CardTipoCall` | `components/meeting/` | Card del team e della call da prenotare |
+| `LezioniProvider` / `useLezioni()` | `components/lezioni/` | Stato delle Lezioni: moduli, lezioni completate, XP, anteprima, iscrizioni alle sessioni |
+| `MappaPercorso`, `ElencoLezioni`, `BarraAvanzamento`, `RiquadroSessione` | `components/lezioni/` | Mappa dei moduli, elenco con lucchetti, avanzamento, sessione live |
+| `ProvaLezione`, `LezioneProtetta` | `components/lezione/Prova.tsx` | Quiz/flag finale e lucchetto della lezione |
+| `useAuth()` | `auth/contesto.ts` | Legge lo stato del login (`utente`, `accedi`, `esci`) da qualsiasi pagina |
+
+I componenti da usare **dentro le lezioni MDX** sono elencati nella [sezione 10](#componenti-mdx-disponibili).
 
 ---
 
@@ -635,7 +710,7 @@ successiva arrivano dal **frontmatter** del file (`lib/catalogo.ts` li legge dur
 - Titolo **"Il percorso"**, frase *"Da zero, hands-first, mai da sole."* e riquadro **"Prossima sessione live"**.
 - **Mappa dei 7 moduli** collegati da una linea (verticale su telefono), con lo stato: ✓ Completato (verde),
   ▶ In corso (viola, con bagliore), 🔒 Prossimamente (grigio). Oggi sono aperti i moduli 1 e 2.
-- **Barra di avanzamento** (*"0/7 lezioni completate"*) e **XP** guadagnati (*"⚡ 0 XP"*).
+- **Barra di avanzamento** (*"0/8 lezioni completate"*) e **XP** guadagnati (*"⚡ 0 XP"*).
 
 ### Moduli, lezioni, lucchetti e XP
 
@@ -789,8 +864,65 @@ componenti può usare Markdown normale (grassetto, elenchi, `codice`).
 | `DueGuardie` | Lo stesso input letto da due componenti con regole diverse (front-end vs back-end, validatore vs router): premendo **▶ Manda l'input** ognuno mostra cosa *vede* e il suo verdetto → il disaccordo sfruttato. `tono`: verde, ambra, cremisi. Per parser differential e `X-Original-URL` | ``<DueGuardie input="POST / · X-Original-URL: /admin/deleteUser" sinistra={{ nome: "FRONT-END", regola: "guarda solo la riga", vede: "/", esito: "fa passare", tono: "ambra" }} destra={{ nome: "BACK-END", regola: "onora l'header", vede: "/admin/deleteUser", esito: "esegue", tono: "cremisi" }} conclusione="l'header bypassa il controllo." />`` |
 | `SourceSink` | Una pallina "input" va da SOURCE a SINK; l'interruttore **"c'è una guardia?"** decide se in mezzo c'è un sanitizer → ✓ sicuro / 💥 vulnerabile. Per Injection / SSRF (e in generale source → sink) | `<SourceSink source="form / URL" sink="query al database" guardia="query parametrizzata" sicuro="Il dato resta un valore." vulnerabile="L'input diventa sintassi." />` |
 
-Restano disponibili anche `Callout` (`<Callout tipo="nota">…</Callout>`), `Schema`, `Flusso` e il blocco di codice con
-la lingua `http`, che mostra una richiesta o una risposta in stile terminale.
+**Riquadri e schemi** (`components/lezioni/mdx/`)
+
+| Componente | Cosa fa | Esempio |
+| --- | --- | --- |
+| `Callout` | Riquadro colorato; `tipo`: `nota` (viola), `attenzione` (cremisi), `suggerimento` (verde) | `<Callout tipo="attenzione" titolo="Occhio">Nascondere non è proteggere.</Callout>` |
+| `Schema` | Riquadro per uno schema, con titolo e didascalia facoltativa (dentro: Markdown) | `<Schema titolo="Verticale · Orizzontale">`<br>`- **Verticale** — poteri diversi`<br>`</Schema>` |
+| `Flusso` | Passi in fila collegati da frecce (separati da virgola); `evidenzia` colora un passo | `<Flusso passi="Utente, Trova /admin, Entra" evidenzia="Entra" />` |
+| ```` ```http ```` | Blocco di codice con lingua `http`: richiesta o risposta in stile terminale (`RichiestaHttp`) | ```` ```http ```` + `GET / HTTP/1.1` + ```` ``` ```` |
+
+#### Esempio di lezione completa
+
+Un file minimo, ad esempio `content/lezioni/01-basi-rete-web/03-cookie.mdx`:
+
+````mdx
+---
+titolo: "Cookie e sessioni"
+modulo: "01-basi-rete-web"
+slug: "03-cookie"
+ordine: 3
+livello: "Da zero"
+durata: "15 min"
+xp: 50
+sessioneLive: "sessione-01-caido"
+prossima: null
+prova:
+  tipo: "quiz"
+  soglia: 70
+  domande:
+    - domanda: "A cosa serve un cookie di sessione?"
+      opzioni: ["A cifrare la pagina", "A farti riconoscere dal sito dopo il login"]
+      corretta: 1
+      spiegazione: "Il cookie è il braccialetto: dice al sito che sei già entrata."
+---
+
+<Intro etichetta="Lezione sec4her · modulo 1" sottotitolo="Come fa il sito a ricordarsi di te?" />
+
+<MappaConcetti concetti={["Il problema", "Il cookie"]} />
+
+<Filo>HTTP non ha memoria: il cookie gliela presta.</Filo>
+
+<Passo numero={1} titolo="Il problema">
+Ogni richiesta arriva al server **da sola**: senza aiuto, lui non sa che sei tu.
+</Passo>
+
+<Passo numero={2} titolo="Il cookie" evidenza>
+Dopo il login il server ti dà un cookie, e il browser lo rimanda a ogni richiesta.
+</Passo>
+
+<LatoHacker>Se il cookie lo scrivi tu, il server non dovrebbe fidarsi.</LatoHacker>
+
+<Callout tipo="suggerimento" titolo="Provalo">Apri **F12 → Applicazione → Cookie** su un sito qualsiasi.</Callout>
+
+<Bottino punti={["HTTP non ha memoria", "Il cookie ti fa riconoscere"]} />
+
+<Chiusura>**Non sei sola.** 🔓</Chiusura>
+````
+
+La prova (qui il quiz) **non va scritta nel testo**: la pagina la aggiunge da sola in fondo, leggendola dal
+frontmatter. Se manca `prova`, in fondo compare il pulsante "Segna come completata".
 
 ### Come aggiungere una nuova lezione (da Obsidian)
 
@@ -1115,13 +1247,29 @@ Branch `lezioni` (parte da `eventi-meeting`):
     Intercept ON/OFF, richiesta modificabile con Forward e Drop, spiegazioni cliccabili, risposte user/admin/errore,
     checklist della missione con spunta automatica e animazione della flag. Funziona anche da telefono (schede).
 
+17. **Documentazione** – `docs/STATO-PROGETTO.md`, `docs/TEST-CHECKLIST.md` e `docs/PIANO-BACKEND.md`.
+
+18. **Modulo 2 – Vulnerabilità web** – 6 lezioni MDX dagli appunti di sicurezza web, con quiz, riquadri "Allenati
+    sul lab" (PortSwigger), lezioni avanzate che si sbloccano dopo le basi e i nuovi componenti `VisoreRichiesta`,
+    `DueGuardie`, `SourceSink` e `FraseChiave`.
+
+19. **Modalità anteprima** – `config/anteprima.ts`: in sviluppo si possono aprire tutte le lezioni ignorando i
+    lucchetti (`?anteprima=1`); in produzione è sempre spenta.
+
+20. **Analisi del progetto** – README aggiornato (fase attuale, tutte le pagine, componenti, esempio di lezione) e
+    `docs/STATO-PROGETTO.md` rifatto al 12/11/2026. Nessuna modifica al codice.
+
 ---
 
 ## 16. Prossimi passi
 
-- **Database vero per gli account**, ad esempio **Supabase** (quello previsto nel documento di architettura:
-  database PostgreSQL con login già pronto) oppure **Firebase**: registrazione che salva davvero e login vero.
+> L'elenco completo e ordinato per priorità è in [`docs/STATO-PROGETTO.md`](docs/STATO-PROGETTO.md), sezione
+> "Pronti per il backend?".
+
+- **Prima di tutto**: aggiornare Next.js (unire `aggiornamento-nextjs`) e portare il lavoro su `main` con una PR.
+- **Account veri con Supabase Auth** (stack ufficiale, Fase 2): registrazione che salva davvero e login vero.
   Le password non vanno mai salvate a mano: ci pensa il servizio di autenticazione.
+- **Risposte dei quiz e flag fuori dal browser**: oggi sono nell'HTML di tutte le pagine delle Lezioni.
 - **Eliminare le credenziali di test** (`config/credenzialiTest.ts`) appena il login vero funziona.
 - **Link veri** in `config/links.ts` (Discord, Cal.com, call degli eventi) e **nomi/foto reali** del team in
   `data/meeting-mock.ts`.
@@ -1138,7 +1286,7 @@ Branch `lezioni` (parte da `eventi-meeting`):
 - **Controlli lato server**: con un database, i controlli sui campi andranno ripetuti anche lì, perché quelli nel
   browser si possono aggirare.
 - **Test automatici** per le regole di `validazione.ts` e per il login: oggi si prova tutto a mano.
-- **Unire i branch su `main`** tramite pull request (prima `login`, poi `home`).
+- **Unire i branch su `main`** tramite pull request: oggi `main` ha ancora solo il primo commit.
 - **Protezione delle pagine sul server** (middleware di Next.js) quando arriva Supabase.
 - Le altre parti previste nei PDF del progetto: **landing page pubblica**, **note pubbliche** in MDX,
   **membership** con Stripe e collegamento a **Discord**.
