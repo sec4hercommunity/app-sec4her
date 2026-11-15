@@ -8,6 +8,7 @@ export type VoceMenu = { titolo: string; percorso: string }
 export const VOCI_MENU: VoceMenu[] = [
   { titolo: 'About us', percorso: '/about' },
   { titolo: 'Lezioni', percorso: '/lezioni' },
+  { titolo: 'Note', percorso: '/note' },
   { titolo: 'Eventi', percorso: '/eventi' },
   { titolo: 'Meeting', percorso: '/meeting' },
   { titolo: 'CTF Groups', percorso: '/ctf' },

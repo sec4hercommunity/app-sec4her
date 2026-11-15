@@ -29,7 +29,7 @@ export const PILASTRI: Pilastro[] = [
     breve: 'Il ragionamento da pentester',
     testo:
       'Per chi le basi le ha già: tecniche avanzate estratte dai lab e dai CTF di founder e co-founder. Niente write-up pronti: il metodo, le domande da farsi davanti a un target.',
-    link: { testo: 'Vai alle lezioni avanzate', percorso: '/lezioni' },
+    link: { testo: 'Apri le note', percorso: '/note' },
     colore: 'crimson',
   },
   {

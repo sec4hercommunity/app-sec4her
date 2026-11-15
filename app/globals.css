@@ -164,3 +164,8 @@ body {
     animation: aurora 14s ease-in-out infinite;
   }
 }
+
+/* Note: i titoli delle sezioni non finiscono sotto l'header quando si clicca una voce dell'indice */
+.nota-testo :is(h2, h3) {
+  scroll-margin-top: 6rem;
+}

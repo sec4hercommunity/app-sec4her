@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import BarraAvanzamento from '@/components/lezioni/BarraAvanzamento'
 import MappaPercorso from '@/components/lezioni/MappaPercorso'
 import RiquadroSessione from '@/components/lezioni/RiquadroSessione'
@@ -16,6 +17,19 @@ export default function PaginaLezioni() {
       </header>
 
       <div className="mt-10 space-y-12">
+        <Link
+          href="/note"
+          className="group flex flex-col gap-3 rounded-2xl border border-crimson/50 bg-crimson/10 p-5 transition hover:border-crimson hover:shadow-[0_0_28px_-6px_rgba(155,44,79,0.7)] sm:flex-row sm:items-center sm:justify-between sm:p-6"
+        >
+          <span>
+            <span className="block font-mono font-bold text-text">🧠 Hai già esperienza?</span>
+            <span className="mt-1 block text-sm text-text/75">
+              Salta il percorso: tutte le note sono aperte, senza lucchetti né quiz, divise per categoria.
+            </span>
+          </span>
+          <span className="shrink-0 font-mono text-sm font-bold text-[#e46a8f] group-hover:underline">Vai alle note →</span>
+        </Link>
+
         <RiquadroSessione largo />
 
         <section aria-labelledby="titolo-mappa">
